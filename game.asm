@@ -304,15 +304,8 @@ update_game_screen
 	ld a, CHR_BALL
 	call TXT_OUTPUT
 
-	
-	ld a, #03							; Erase player 1 (red)
-	call TXT_SET_PEN
-	ld ix, game_state
-	ld hl, (ix + OFFSET_P1_OLD_Y)
-	call TXT_SET_CURSOR
-	ld a, CHR_SPACE
-	call TXT_OUTPUT
-	ld a, #03							; Draw player 1 (red)
+	; Draw player 1 (red)
+	ld a, #03							
 	call TXT_SET_PEN
 	ld ix, game_state
 	ld hl, (ix + OFFSET_P1_Y)
@@ -476,7 +469,7 @@ _p2_move_up:
 
 	; If we can move, store the current location then move
 	ld ix, game_state
-	ld a, (ix + OFFSET_P2_X)
+	ld a, (ix + OFFSET_P2_Y)
 	ld (ix + OFFSET_P2_OLD_Y), a
 	dec a
 	ld (ix + OFFSET_P2_Y), a
@@ -499,7 +492,7 @@ _p2_move_down:
 	inc a
 	ld (ix + OFFSET_P2_Y), a
 	ld a, CHR_PLAYER_DOWN
-	ld (game_state + OFFSET_P2_CHAR), a
+	ld (ix + OFFSET_P2_CHAR), a
 	jp return_from_movement_p2 
 
 _p2_move_left:
