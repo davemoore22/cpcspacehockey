@@ -8,8 +8,10 @@ main_game_loop:
 	call _bcd_compare
 	ret z
 
-	call refresh_game_screen				; Otherwise continue
+	call refresh_game_screen			; Otherwise continue
 	call handle_input
+	call handle_ball_movement
+	call check_for_goal_scored
 
 	ld de, time_left					; Decrement the timer
 	ld hl, time_decrement
@@ -64,17 +66,32 @@ display_title_screen:
 
 ; Title screen keyboard loop
 ; --------------------------
-wait_for_title_screen_keys:
-wait_for_game_over_screen_keys:
+wait_for_keys:
 
 	ld a, P1_FIRE						; Check for p1/p2 fire
 	call KM_TEST_KEY
-	ret nz
+	jr nz, continue
 	ld a, P2_FIRE
 	call KM_TEST_KEY
-	ret nz
+	jr nz, continue
 
-	jp wait_for_title_screen_keys		; Loop around until either are pressed
+	ld a, KEY_QUIT						; Check for Q to quit
+	call KM_TEST_KEY
+	jr nz, quit_game
+
+	jp wait_for_keys					; Loop around
+
+quit_game:
+
+	ld a, #FF							; If we want to quit, return from this with quit flag set
+	ld (quit_flag), a
+	ret
+
+continue:
+
+	ld a, 0
+	ld (quit_flag), a
+	ret
 
 ; Setup UDCs
 ; ----------
@@ -118,6 +135,8 @@ initalise_game_state:
 	ld (ix), 0
 	ld (ix + 1), GAME_TIME_MSB
 
+reset_player_and_ball_positions:
+
 	ld ix, game_state					; Initial data for player 1
 	ld (ix + P1_Y), 16
 	ld (ix + P1_X), 5
@@ -143,7 +162,6 @@ initalise_game_state:
 ; Draw game UI
 ; ------------
 draw_game_screen:
-
 
 	call MC_WAIT_FLYBACK				; Wait for frame flyback to avoid flicker
 	call SCR_CLEAR
@@ -295,14 +313,14 @@ refresh_game_screen
 	ld a, (game_state + P1_CHAR)
 	call TXT_OUTPUT
 
-	ld a, #03							; Erase player 2
+	ld a, 3								; Erase player 2
 	call TXT_SET_PEN
 	ld hl, (game_state + P2_OLD_Y)
 	call TXT_SET_CURSOR
 	ld a, CHR_SPACE
 	call TXT_OUTPUT
 
-	ld a, #01							; Draw player 2
+	ld a, 1								; Draw player 2
 	call TXT_SET_PEN
 	ld hl, (game_state + P2_Y)
 	call TXT_SET_CURSOR
@@ -310,6 +328,23 @@ refresh_game_screen
 	call TXT_OUTPUT
 
 	ret
+
+
+; Check for collision detection between the ball and the players
+; --------------------------------------------------------------
+handle_ball_movement:
+
+	; if player is adjacent to the ball then move it away
+
+
+	ret
+
+; Check for a goal being scored
+check_for_goal_scored:
+
+
+	ret
+
 
 ; Check for any inputs
 ; --------------------
@@ -333,27 +368,27 @@ handle_input:
 
 	ld a, P1_FIRE
 	call KM_TEST_KEY
-	jp nz, _p1_fire
+	jp nz, p1_return_goal
 
-_return_p1:
+return_p1:
 
 	ld a, P2_UP							; Check for player 2 controls
 	call KM_TEST_KEY
-	jp nz, _p2_move_up
+	jp nz, p2_move_up
 	ld a, P2_DOWN
 	call KM_TEST_KEY
-	jp nz, _p2_move_down
+	jp nz, p2_move_down
 	ld a, P2_LEFT
 	call KM_TEST_KEY
-	jp nz, _p2_move_left
+	jp nz, p2_move_left
 	ld a, P2_RIGHT
 	call KM_TEST_KEY
-	jp nz, _p2_move_right
+	jp nz, p2_move_right
 	ld a, P2_FIRE
 	call KM_TEST_KEY
-	jp nz, _p2_fire
+	jp nz, p2_return_goal
 
-_return_p2:
+return_p2:
 
 	ret
 
@@ -364,7 +399,7 @@ p1_move_up:
 
 	ld a, (game_state + P1_Y)			; Check for edge of playing area
 	cp a, 2
-	jp z, _return_p1					; If we are at the edge don't do anything
+	jp z, return_p1					; If we are at the edge don't do anything
 
 	ld a, (game_state + P1_X)			; Store the current location
 	ld (game_state + P1_OLD_X), a
@@ -375,14 +410,14 @@ p1_move_up:
 	ld (game_state + P1_Y), a
 	ld a, CHR_UP						; Set player orientation character
 	ld (game_state + P1_CHAR), a
-	jp _return_p1
+	jp return_p1
 
 
 p1_move_down:
 
 	ld a, (game_state + P1_Y)			; Check for edge of playing area
 	cp a, 22
-	jp z, _return_p1					; If we are at the edge don't do anything
+	jp z, return_p1					; If we are at the edge don't do anything
 
 	ld a, (game_state + P1_X)			; Store the current location
 	ld (game_state + P1_OLD_X), a
@@ -393,13 +428,13 @@ p1_move_down:
 	ld (game_state + P1_Y), a
 	ld a, CHR_DOWN						; Set player orientation character
 	ld (game_state + P1_CHAR), a
-	jp _return_p1
+	jp return_p1
 
 p1_move_left:
 
 	ld a, (game_state + P1_X)			; Check for edge of playing area
 	cp a, 2
-	jp z,_return_p1						; If we are at the edge don't do anything
+	jp z,return_p1						; If we are at the edge don't do anything
 
 	ld a, (game_state + P1_Y)			; Store the current location
 	ld (game_state + P1_OLD_Y), a
@@ -410,13 +445,13 @@ p1_move_left:
 	ld (game_state + P1_X), a
 	ld a, CHR_LEFT						; Set player orientation character
 	ld (game_state + P1_CHAR), a
-	jp _return_p1
+	jp return_p1
 
 p1_move_right:
 
 	ld a, (game_state + P1_X)			; Check for edge of playing area
 	cp a, 39
-	jp z, _return_p1					; If we are at the edge don't do anything
+	jp z, return_p1					; If we are at the edge don't do anything
 
 	ld a, (game_state + P1_Y)			; Store the current location
 	ld (game_state + P1_OLD_Y), a
@@ -427,9 +462,9 @@ p1_move_right:
 	ld (game_state + P1_X), a
 	ld a, CHR_RIGHT						; Set player orientation character
 	ld (game_state + P1_CHAR), a
-	jp _return_p1
+	jp return_p1
 
-_p1_fire:
+p1_return_goal:
 
 	ld a, (game_state + P1_X)			; Store the current location
 	ld (game_state + P1_OLD_X), a
@@ -441,16 +476,16 @@ _p1_fire:
 
 	ld a, CHR_RIGHT						; Set player orientation character
 	ld (game_state + P1_CHAR), a
-	jp _return_p1
+	jp return_p1
 
 
 ; Player 2 movement
 ; -----------------
-_p2_move_up:
+p2_move_up:
 
 	ld a, (game_state + P2_Y)			; Check for edge of playing area
 	cp a, 2
-	jp z, _return_p2					; If we are at the edge don't do anything
+	jp z, return_p2					; If we are at the edge don't do anything
 
 	ld a, (game_state + P2_X)			; Store the current location
 	ld (game_state + P2_OLD_X), a
@@ -461,13 +496,13 @@ _p2_move_up:
 	ld (game_state + P2_Y), a
 	ld a, CHR_UP						; Set player orientation character
 	ld (game_state + P2_CHAR), a
-	jp _return_p2
+	jp return_p2
 
-_p2_move_down:
+p2_move_down:
 
 	ld a, (game_state + P2_Y)			; Check for edge of playing area
 	cp a, 22
-	jp z, _return_p2					; If we are at the edge don't do anything
+	jp z, return_p2					; If we are at the edge don't do anything
 
 	ld a, (game_state + P2_X)			; Store the current location
 	ld (game_state + P2_OLD_X), a
@@ -478,13 +513,13 @@ _p2_move_down:
 	ld (game_state + P2_Y), a
 	ld a, CHR_DOWN						; Set player orientation character
 	ld (game_state + P2_CHAR), a
-	jp _return_p2
+	jp return_p2
 
-_p2_move_left:
+p2_move_left:
 
 	ld a, (game_state + P2_X)			; Check for edge of playing area
 	cp a, 2
-	jp z,_return_p2						; If we are at the edge don't do anything
+	jp z,return_p2						; If we are at the edge don't do anything
 
 	ld a, (game_state + P2_Y)			; Store the current location
 	ld (game_state + P2_OLD_Y), a
@@ -495,14 +530,14 @@ _p2_move_left:
 	ld (game_state + P2_X), a
 	ld a, CHR_LEFT						; Set player orientation character
 	ld (game_state + P2_CHAR), a
-	jp _return_p2
+	jp return_p2
 
 
-_p2_move_right:
+p2_move_right:
 
 	ld a, (game_state + P2_X)			; Check for edge of playing area
 	cp a, 39
-	jp z, _return_p2					; If we are at the edge don't do anything
+	jp z, return_p2					; If we are at the edge don't do anything
 
 	ld a, (game_state + P2_Y)			; Store the current location
 	ld (game_state + P2_OLD_Y), a
@@ -513,9 +548,9 @@ _p2_move_right:
 	ld (game_state + P2_X), a
 	ld a, CHR_RIGHT						; Set player orientation character
 	ld (game_state + P2_CHAR), a
-	jp _return_p1
+	jp return_p1
 
-_p2_fire:
+p2_return_goal:
 
 	ld a, (game_state + P2_X)			; Store the current location
 	ld (game_state + P2_OLD_X), a
@@ -527,4 +562,4 @@ _p2_fire:
 
 	ld a, CHR_LEFT						; Set player orientation character
 	ld (game_state + P1_CHAR), a
-	jp _return_p1
+	jp return_p1

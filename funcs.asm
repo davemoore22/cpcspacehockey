@@ -14,21 +14,23 @@ _print_string:
 
 ; Print a decimal number
 ; ----------------------
+;
+; https://tinyurl.com/mr39uep5
+
 _print_number:
 
-; https://www.cpcwiki.eu/index.php?title=Programming:Display_a_byte_as_a_3-digit_decimal_number&mobileaction=toggle_view_desktop
 
 print_decimal_byte:
 
 	ld b, 100							; Divisor to obtain 100's digit value
-	call print_decimal_digit   			; Display digit
-	ld b, 10                    		; Divisor to obtain 10's digit value
+	call print_decimal_digit			; Display digit
+	ld b, 10							; Divisor to obtain 10's digit value
 	call print_decimal_digit   			; Display digit
 	ld b, 1								; Divisor to obtain 1's digit value
 
 print_decimal_digit:
 
-	ld c, 0								; Zeroise result 
+	ld c, 0								; Zeroise result
 
 decimal_divide:
 
@@ -44,7 +46,7 @@ display_decimal_digit:
 
 	push af
 	ld a, c								; Get digit value
-	add a, "0"							; Convert value into ASCII character
+	add a, '0'							; Convert value into ASCII character
 	call TXT_OUTPUT						; Display digit
 	pop af
 	ret
@@ -57,14 +59,14 @@ display_decimal_digit:
 _bcd_get_end:
 
 	push bc
-		ld c,b							; We want to add BC, but we need to number of bytes - 1
+		ld c, b							; We want to add BC, but we need to number of bytes - 1
 		dec c
-		ld b,0
-		add hl,bc
-		ex hl,de						; We've done HL, but we also want to do DE
+		ld b, 0
+		add hl, bc
+		ex hl, de						; We've done HL, but we also want to do DE
 
-		add hl,bc
-		ex hl,de
+		add hl, bc
+		ex hl, de
 	pop bc
 	ret
 
@@ -74,19 +76,19 @@ _bcd_show:
 
 _bcd_show_direct:
 
-	ld a,(de)
+	ld a, (de)
 	and %11110000						; Use the high nibble
 	rrca
 	rrca
 	rrca
 	rrca
 	add '0'								; Convert to a letter and print it
-	call #BB5A
-	ld a,(de)	
+	call TXT_OUTPUT
+	ld a, (de)
 	dec de
 	and %00001111						; Now the low nibble
 	add '0'
-	call #BB5A
+	call TXT_OUTPUT
 	djnz _bcd_show_direct				; Next byte
 	ret
 
@@ -96,10 +98,10 @@ _bcd_subtract:							; Clear carry flag
 
 _bcd_subtract_again:
 
-	ld a,(de)
+	ld a, (de)
 	sbc (hl)							; Subtract HL from DE with carry
 	daa									; Fix A using DAA
-	ld (de),a							; Store it
+	ld (de), a							; Store it
 
 	inc de
 	inc hl
@@ -112,10 +114,10 @@ _bcd_add:
 
 _bcd_add_again:
 
-	ld a,(de)
+	ld a, (de)
 	adc (hl)							; Add HL to DE with carry
 	daa									; Fix A using DAA
-	ld (de),a							; Store it
+	ld (de), a							; Store it
 
 	inc de
 	inc hl
@@ -128,7 +130,7 @@ _bcd_compare:
 
 _bcd_compare_direct:					; Start from MSB
 
-	ld a,(de)
+	ld a, (de)
 	cp (hl)
 	ret c								; Smaller
 	ret nz								; Greater

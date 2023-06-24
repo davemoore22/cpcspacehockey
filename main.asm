@@ -15,7 +15,11 @@ setup:
 start_game:
 
 	call display_title_screen
-	call wait_for_title_screen_keys
+	call wait_for_keys
+
+	ld a, (quit_flag)					; Exit if Q key is pressed
+	cp #FF
+	ret z
 
 restart_game:
 
@@ -24,7 +28,12 @@ restart_game:
 	call main_game_loop
 
 	call game_over_screen				; Game over
-	call wait_for_game_over_screen_keys
+	call wait_for_keys
+
+	ld a, (quit_flag)					; Exit if Q key is pressed
+	cp #FF
+	ret z
+
 	jp restart_game
 
 ALIGN #100
@@ -52,6 +61,9 @@ game_state:								; Space for game state
 	DEFB 0, 0, 0, 0, 0, 0				; Player 2 old_x, old_y, x, y, character, score
 	DEFB 0, 0, 0, 0						; Ball old_x, old_y, x, y
 
+quit_flag:
+
+	DEFB #00							; Set if we want to quit
 
 time_left:								; Space for timer
 
