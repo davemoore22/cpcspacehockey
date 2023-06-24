@@ -332,9 +332,62 @@ refresh_game_screen
 
 ; Check for collision detection between the ball and the players
 ; --------------------------------------------------------------
+;
+; if player is adjacent to the ball then move it away in the opposite direction
 handle_ball_movement:
 
-	; if player is adjacent to the ball then move it away
+	or a
+	ld a, (game_state + BALL_X)			; Work out the offset from first player to the ball
+	ld b, a
+	ld a, (game_state + P1_X)
+	call _find_abs_diff_numbers
+	ld c, a
+	or a
+	ld a, (game_state + BALL_Y)
+	ld b, a
+	ld a, (game_state + P1_Y)
+	call _find_abs_diff_numbers
+	ld b, a								; Store in B and C for now
+
+	or a
+	ld a, (game_state + BALL_X)			; Work out the offset from second player to the ball
+	ld b, a
+	ld a, (game_state + P2_X)
+	call _find_abs_diff_numbers
+	ld e, a
+	or a
+	ld a, (game_state + BALL_Y)			
+	ld b, a
+	ld a, (game_state + P2_Y)
+	call _find_abs_diff_numbers
+	ld d, a								; Store in D and E for now
+
+	or a
+	ld a, d								; Quickly exit if players are not adjacent
+	cp 2
+	ret z
+	ret nc
+
+	or a
+	ld a, e								
+	cp 2
+	ret z
+	ret nc
+
+	or a
+	ld a, b								
+	cp 2
+	ret z
+	ret nc
+
+	or a
+	ld a, c								
+	cp 2
+	ret z
+	ret nc
+
+	ld a, 7
+	call TXT_OUTPUT
 
 
 	ret
@@ -375,15 +428,19 @@ return_p1:
 	ld a, P2_UP							; Check for player 2 controls
 	call KM_TEST_KEY
 	jp nz, p2_move_up
+
 	ld a, P2_DOWN
 	call KM_TEST_KEY
 	jp nz, p2_move_down
+
 	ld a, P2_LEFT
 	call KM_TEST_KEY
 	jp nz, p2_move_left
+
 	ld a, P2_RIGHT
 	call KM_TEST_KEY
 	jp nz, p2_move_right
+
 	ld a, P2_FIRE
 	call KM_TEST_KEY
 	jp nz, p2_return_goal
@@ -548,7 +605,7 @@ p2_move_right:
 	ld (game_state + P2_X), a
 	ld a, CHR_RIGHT						; Set player orientation character
 	ld (game_state + P2_CHAR), a
-	jp return_p1
+	jp return_p2
 
 p2_return_goal:
 

@@ -17,7 +17,7 @@ _print_string:
 ;
 ; https://tinyurl.com/mr39uep5
 
-_print_number:
+_print_number:							; A = 8 bit value
 
 
 print_decimal_byte:
@@ -139,3 +139,12 @@ _bcd_compare_direct:					; Start from MSB
 	djnz _bcd_compare_direct
 	or a 								; Clear the carry flag
 	ret
+
+
+_find_abs_diff_numbers:
+	sub b								; A, B contain the numbers to compare
+	or a
+	ret p
+	neg
+    ret	
+
