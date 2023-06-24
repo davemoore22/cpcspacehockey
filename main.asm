@@ -32,7 +32,7 @@ ALIGN #100
 INCLUDE 'game.asm'
 INCLUDE 'consts.asm'
 INCLUDE 'strings.asm'
-INCLUDE 'bcd.asm'
+INCLUDE 'funcs.asm'
 
 ALIGN #100
 

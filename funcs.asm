@@ -1,3 +1,54 @@
+; Print Functions
+
+; Print a string
+; --------------
+_print_string:
+
+	ld a, (hl)							; HL = address of string to print (terminated by 0)
+	cp 0
+	ret z
+	inc hl
+	call TXT_OUTPUT
+	jr _print_string
+
+
+; Print a decimal number
+; ----------------------
+_print_number:
+
+; https://www.cpcwiki.eu/index.php?title=Programming:Display_a_byte_as_a_3-digit_decimal_number&mobileaction=toggle_view_desktop
+
+print_decimal_byte:
+
+	ld b, 100							; Divisor to obtain 100's digit value
+	call print_decimal_digit   			; Display digit
+	ld b, 10                    		; Divisor to obtain 10's digit value
+	call print_decimal_digit   			; Display digit
+	ld b, 1								; Divisor to obtain 1's digit value
+
+print_decimal_digit:
+
+	ld c, 0								; Zeroise result 
+
+decimal_divide:
+
+	sub b								; Subtract divisor
+	jr c, display_decimal_digit 		; If dividend is less than divisor, the division has finished
+
+	inc c								; Increment digit value
+	jr decimal_divide
+
+display_decimal_digit:
+
+	add a, b							; Add divisor because dividend was negative, leaving remainder
+
+	push af
+	ld a, c								; Get digit value
+	add a, "0"							; Convert value into ASCII character
+	call TXT_OUTPUT						; Display digit
+	pop af
+	ret
+
 ; BCD Functions
 ;
 ; https://chibiakumas.com/z80/advanced.php
