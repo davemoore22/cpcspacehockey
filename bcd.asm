@@ -75,7 +75,7 @@ _bcd_compare:
 
 	call _bcd_get_end
 
-_bcd_compare_direct:						; Start from MSB
+_bcd_compare_direct:					; Start from MSB
 
 	ld a,(de)
 	cp (hl)

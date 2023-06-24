@@ -19,7 +19,7 @@ start_game:
 
 restart_game:
 
-	call setup_game_state
+	call initalise_game_state
 	call draw_game_screen				; Main game loop
 	call main_game_loop
 
@@ -27,6 +27,14 @@ restart_game:
 	call wait_for_game_over_screen_keys
 	jp restart_game
 
+ALIGN #100
+
+INCLUDE 'game.asm'
+INCLUDE 'consts.asm'
+INCLUDE 'strings.asm'
+INCLUDE 'bcd.asm'
+
+ALIGN #100
 
 matrix_table:							; Space for UDCs
 
@@ -56,13 +64,6 @@ time_decrement:
 time_game_over:
 
 	DEFB #00, #00						; Game Over
-
-
-; Includes
-INCLUDE 'game.asm'
-INCLUDE 'consts.asm'
-INCLUDE 'strings.asm'
-INCLUDE 'bcd.asm'
 
 END_CODE
 

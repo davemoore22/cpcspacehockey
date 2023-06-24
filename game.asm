@@ -2,19 +2,16 @@
 ; ---------------------
 main_game_loop:
 	
-	; Check for game over (i.e. main timer expired)
-	ld de, time_left
+	ld de, time_left					; Check for game over (i.e. main timer expired)
 	ld hl, time_game_over
 	ld b, GAME_TIME_DIGITS
 	call _bcd_compare
 	ret z
 
-	; Otherwise continue
-	call update_game_screen
+	call update_game_screen				; Otherwise continue
 	call handle_input
 	
-	; Decrement the timer
-	ld de, time_left
+	ld de, time_left					; Decrement the timer
 	ld hl, time_decrement	
 	ld b, GAME_TIME_DIGITS
 	call _bcd_subtract
@@ -25,32 +22,27 @@ main_game_loop:
 ; --------------------
 display_title_screen:
 
-	; Initialise and clear the screen
-	call SCR_RESET
+	call SCR_RESET						; Initialise and clear the screen
 	call SCR_CLEAR
 
-	; Set screen mode
-	ld a, #01
+	ld a, 1								; Set screen mode
 	call SCR_SET_MODE
 
-	; Set border colour
-	ld bc, #0B0B
+	ld bc, #0B0B						; Set border colour
 	call SCR_SET_BORDER
 
-	; Set pen and paper
-	ld a, #01
+	ld a, 1								; Set pen and paper
 	call TXT_SET_PEN
-	ld a, #00
+	ld a, 0
 	call TXT_SET_PAPER
 
-	; Display title text
-	ld hl, #0802
+	
+	ld hl, #0802						; Display title text
 	call TXT_SET_CURSOR
 	ld hl, str_title
 	call _print_string
 
-	; Display credits
-	ld a, #02
+	ld a, 2								; Display credits
 	call TXT_SET_PEN
 	ld hl, #0304
 	call TXT_SET_CURSOR
@@ -61,8 +53,7 @@ display_title_screen:
 	ld hl, str_credits_2
 	call _print_string
 
-	; Display ready message
-	ld a, #01
+	ld a, 1								; Display ready message
 	call TXT_SET_PEN
 	ld hl, #0717
 	call TXT_SET_CURSOR
@@ -76,28 +67,24 @@ display_title_screen:
 wait_for_title_screen_keys:
 wait_for_game_over_screen_keys:
 
-	; Check for space or joystick fire
-	ld a, INPUT_P1_FIRE
+	ld a, INPUT_P1_FIRE					; Check for p1/p2 fire
 	call KM_TEST_KEY
 	ret nz
 	ld a, INPUT_P2_FIRE
 	call KM_TEST_KEY
 	ret nz
 
-	; Loop around until either are pressed
-	jp wait_for_title_screen_keys
+	jp wait_for_title_screen_keys		; Loop around until either are pressed
 	
 ; Setup UDCs
 ; ----------
 setup_user_defined_characters:
 
-	; Set the start of the UDCs
-	ld de, UDG_FIRST
+	ld de, UDG_FIRST					; Set the start of the UDCs
 	ld hl, matrix_table
 	call TXT_SET_M_TABLE
 
-	; Load the UDCs
-	ld a, CHR_BANNER
+	ld a, CHR_BANNER					; Load the UDCs starting from UDG_FIRST
 	ld hl, udg_banner
 	call TXT_SET_MATRIX
 
@@ -125,37 +112,31 @@ setup_user_defined_characters:
 
 ; Clear and setup game state
 ; --------------------------
-setup_game_state:
+initalise_game_state:
 
-	; Get the area of memory for storing game data
-	ld ix, time_left
-
-	ld (ix), #00						; Initial game time left
+	ld ix, time_left					; Store the initial timer value
+	ld (ix), 0							
 	ld (ix + 1), GAME_TIME_MSB
 
-	ld ix, game_state
-
-	; Initial data for player 1
-	ld (ix + OFFSET_P1_X), 5
+	ld ix, game_state					; Initial data for player 1
 	ld (ix + OFFSET_P1_Y), 16
-	ld (ix + OFFSET_P1_OLD_X), 5
+	ld (ix + OFFSET_P1_X), 5			
 	ld (ix + OFFSET_P1_OLD_Y), 16
+	ld (ix + OFFSET_P1_OLD_X), 5
 	ld (ix + OFFSET_P1_CHAR), CHR_PLAYER_RIGHT
 	ld (ix + OFFSET_P1_SCORE), 0
 
-	; Initial data for player 2
+	ld (ix + OFFSET_P2_Y), 5			; Initial data for player 2
 	ld (ix + OFFSET_P2_X), 35
-	ld (ix + OFFSET_P2_Y), 5
-	ld (ix + OFFSET_P2_OLD_X), 35
 	ld (ix + OFFSET_P2_OLD_Y), 5
+	ld (ix + OFFSET_P2_OLD_X), 35
 	ld (ix + OFFSET_P2_CHAR), CHR_PLAYER_LEFT
 	ld (ix + OFFSET_P2_SCORE), 0
 
-	; Initial ball position
-	ld (ix + OFFSET_BALL_OLD_X), 20	
-	ld (ix + OFFSET_BALL_OLD_Y), 11
-	ld (ix + OFFSET_BALL_X), 20	
+	ld (ix + OFFSET_BALL_OLD_Y), 11		; Initial ball position
+	ld (ix + OFFSET_BALL_OLD_X), 20		
 	ld (ix + OFFSET_BALL_Y), 11
+	ld (ix + OFFSET_BALL_X), 20	
 
 	ret
 
@@ -163,23 +144,20 @@ setup_game_state:
 ; ------------
 draw_game_screen:
 
-	; Wait for frame flyback to avoid flicker and clear the screen
-	call MC_WAIT_FLYBACK				
+	
+	call MC_WAIT_FLYBACK				; Wait for frame flyback to avoid flicker
 	call SCR_CLEAR
 
-	; Set inks
-	ld a, 0	
+	ld a, 0								; Set inks
 	ld b, 0
 	ld c, 0
 	call SCR_SET_INK
-
-	; Draw goals
-	ld a, #01
+	ld a, 1								
 	call TXT_SET_PEN
-	ld a, #00
+	ld a, 0
 	call TXT_SET_PAPER
 
-	ld a, CHR_GOALS
+	ld a, CHR_GOALS						; Draw goals
 	ld hl, #0105
 	call TXT_SET_CURSOR
 	ld a, CHR_GOALS
@@ -197,19 +175,18 @@ draw_game_screen:
 	ld a, CHR_GOALS
 	call TXT_OUTPUT
 
-	; Draw bottom HUD
-	ld a, CHR_BANNER
+	ld a, CHR_BANNER					; Draw bottom HUD
 	ld b, 40
 	ld hl, #0117
 	loop:
-	push hl
-	push bc
- 	call TXT_SET_CURSOR
-	ld a, CHR_BANNER
-	call TXT_OUTPUT
-	pop bc
-	pop hl
-	inc h
+		push hl
+		push bc
+		call TXT_SET_CURSOR
+		ld a, CHR_BANNER
+		call TXT_OUTPUT
+		pop bc
+		pop hl
+		inc h
 	djnz loop
 
 	ld hl, #0818
@@ -240,38 +217,33 @@ draw_game_screen:
 ; ----------------
 game_over_screen:
 
-	; Clear the screen
-	call SCR_CLEAR
+	call SCR_CLEAR						; Clear the screen
 
-	; Set pen and paper
-	ld a, #01
+	ld a, 1								; Set pen and paper
 	call TXT_SET_PEN
-	ld a, #00
+	ld a, 0
 	call TXT_SET_PAPER
 
-	; Display game over message
-	ld hl, #0D02
+	ld hl, #0D02						; Display game over message
 	call TXT_SET_CURSOR
 	ld hl, str_game_over
 	call _print_string
 
-	; Display scores
-	ld a, #03
+	ld a, 3								; Display scores
 	call TXT_SET_PEN
 	ld hl, #0F08	
 	call TXT_SET_CURSOR
 	ld hl, str_p1_name
 	call _print_string
 
-	ld a, #01
+	ld a, 1
 	call TXT_SET_PEN
 	ld hl, #0F0A
 	call TXT_SET_CURSOR
 	ld hl, str_p2_name
 	call _print_string
 
-	; Display play again message
-	ld a, #01
+	ld a, 1								; Display play again message
 	call TXT_SET_PEN
 	ld hl, #0517
 	call TXT_SET_CURSOR
@@ -284,10 +256,9 @@ game_over_screen:
 ; ------------------
 update_game_screen
 
-	call MC_WAIT_FLYBACK
+	call MC_WAIT_FLYBACK				; Wait for frame flyback to avoid flicker
 
-	; Draw timer
-	ld a, #01
+	ld a, 1								; Draw timer
 	call TXT_SET_PEN
 	ld hl, #1219
 	call TXT_SET_CURSOR
@@ -295,8 +266,7 @@ update_game_screen
 	ld b, GAME_TIME_DIGITS
 	call _bcd_show
 
-	; Draw ball (cyan)
-	ld a, #02
+	ld a, 2								; Draw ball
 	call TXT_SET_PEN
 	ld ix, game_state
 	ld hl, (ix + OFFSET_BALL_Y)
@@ -304,8 +274,15 @@ update_game_screen
 	ld a, CHR_BALL
 	call TXT_OUTPUT
 
-	; Draw player 1 (red)
-	ld a, #03							
+	ld a, 3								; Erase player 1
+	call TXT_SET_PEN
+	ld ix, game_state
+	ld hl, (ix + OFFSET_P1_OLD_Y)
+	call TXT_SET_CURSOR
+	ld a, CHR_SPACE
+	call TXT_OUTPUT
+
+	ld a, 3								; Draw player 1					
 	call TXT_SET_PEN
 	ld ix, game_state
 	ld hl, (ix + OFFSET_P1_Y)
@@ -313,8 +290,15 @@ update_game_screen
 	ld a, (ix + OFFSET_P1_CHAR)
 	call TXT_OUTPUT
 
-	; Draw player 2 (yellow)
-	ld a, #01							
+	ld a, #03							; Erase player 2
+	call TXT_SET_PEN
+	ld ix, game_state
+	ld hl, (ix + OFFSET_P2_OLD_Y)
+	call TXT_SET_CURSOR
+	ld a, CHR_SPACE
+	call TXT_OUTPUT
+
+	ld a, #01							; Draw player 2
 	call TXT_SET_PEN
 	ld ix, game_state
 	ld hl, (ix + OFFSET_P2_Y)
@@ -327,10 +311,9 @@ update_game_screen
 ; Check for any inputs
 ; --------------------
 handle_input:
-handle_input_p1:
+_handle_input_p1:
 
-	; Check for player 1 controls
-	ld a, INPUT_P1_UP
+	ld a, INPUT_P1_UP					; Check for player 1 controls
 	call KM_TEST_KEY
 	jp nz, _p1_move_up
 	ld a, INPUT_P1_DOWN
@@ -346,11 +329,10 @@ handle_input_p1:
 	call KM_TEST_KEY
 	jp nz, _p1_fire
 
-return_from_movement_p1:
-handle_input_p2:
+_return_p1:
+_handle_input_p2:
 
-	; Check for player 2 controls
-	ld a, INPUT_P2_UP
+	ld a, INPUT_P2_UP					; Check for player 2 controls
 	call KM_TEST_KEY
 	jp nz, _p2_move_up
 	ld a, INPUT_P2_DOWN
@@ -366,7 +348,7 @@ handle_input_p2:
 	call KM_TEST_KEY
 	jp nz, _p2_fire
 
-return_from_movement_p2:
+_return_p2:
 
 	ret
 
@@ -374,182 +356,178 @@ return_from_movement_p2:
 ; -----------------
 _p1_move_up:
 
-	; Check for edge of playing area
-	ld ix, game_state
+	ld ix, game_state					; Check for edge of playing area
 	ld a, (game_state + OFFSET_P1_Y);
 	cp a, 2
-	jp z, return_from_movement_p1
+	jp z, _return_p1					; If we are at the edge don't do anything
 
-	; If we can move, store the current location then move
-	ld ix, game_state
+	ld ix, game_state					; Store the current location
 	ld a, (ix + OFFSET_P1_Y)
 	ld (ix + OFFSET_P1_OLD_Y), a
-	dec a
+	
+	dec a								; Move
 	ld (ix + OFFSET_P1_Y), a
 	ld a, CHR_PLAYER_UP
 	ld (ix + OFFSET_P1_CHAR), a
-	jp return_from_movement_p1
+	jp _return_p1
 
 _p1_move_down:
 
-	; Check for edge of playing area
-	ld ix, game_state
+	ld ix, game_state					; Check for edge of playing area
 	ld a, (ix + OFFSET_P1_Y);
 	cp a, 22
-	jp z, return_from_movement_p1
+	jp z, _return_p1					; If we are at the edge don't do anything
 
-	; If we can move, store the current location then move
-	ld ix, game_state
+	ld ix, game_state					; Store the current location
 	ld a, (ix + OFFSET_P1_Y)
 	ld (ix + OFFSET_P1_OLD_Y), a
-	inc a
+	
+	inc a								; Move
 	ld (ix + OFFSET_P1_Y), a
 	ld a, CHR_PLAYER_DOWN
 	ld (ix + OFFSET_P1_CHAR), a
-	jp return_from_movement_p1 
+	jp _return_p1 
 
 _p1_move_left:
 
-	; Check for edge of playing area
-	ld ix, game_state
+	ld ix, game_state					; Check for edge of playing area
 	ld a, (ix + OFFSET_P1_X);
 	cp a, 2
-	jp z, return_from_movement_p1
+	jp z, _return_p1					; If we are at the edge don't do anything
 
-	; If we can move, store the current location then move
 	ld ix, game_state
 	ld a, (ix + OFFSET_P1_X)
-	ld (ix + OFFSET_P1_OLD_X), a
-	dec a
+	ld (ix + OFFSET_P1_OLD_X), a		; Store the current location
+	
+	dec a								; Move
 	ld (ix + OFFSET_P1_X), a
 	ld a, CHR_PLAYER_LEFT
 	ld (ix + OFFSET_P1_CHAR), a
-	jp return_from_movement_p1
+	jp _return_p1
 
 _p1_move_right:
 
-	; Check for edge of playing area
-	ld ix, game_state
+	ld ix, game_state					; Check for edge of playing area
 	ld a, (ix + OFFSET_P1_X);
 	cp a, 39
-	jp z, return_from_movement_p1
+	jp z, _return_p1					; If we are at the edge don't do anything
 
-	; If we can move, store the current location then move
 	ld ix, game_state
 	ld a, (ix + OFFSET_P1_X)
-	ld (ix + OFFSET_P1_OLD_X), a
-	inc a
+	ld (ix + OFFSET_P1_OLD_X), a		; Store the current location
+	
+	inc a								; Move
 	ld (ix + OFFSET_P1_X), a
 	ld a, CHR_PLAYER_RIGHT
 	ld (ix + OFFSET_P1_CHAR), a
-	jp return_from_movement_p1
+	jp _return_p1
 
+; Return to goal
 _p1_fire:
 
-	; Return to goal
-	ld ix, game_state
+	ld ix, game_state					; Store the current location
 	ld a, (ix + OFFSET_P1_X)
 	ld (ix + OFFSET_P1_OLD_X), a
-	ld a, 2
+	
+	ld a, 2								; Move
 	ld (ix + OFFSET_P1_X), a
 	ld a, CHR_PLAYER_RIGHT
 	ld (ix + OFFSET_P1_CHAR), a
-	jp return_from_movement_p1
+	jp _return_p1
 
 
 ; Player 2 movement
 ; -----------------
 _p2_move_up:
 
-	; Check for edge of playing area
-	ld ix, game_state
+	ld ix, game_state					; Check for edge of playing area
 	ld a, (ix + OFFSET_P2_Y)
 	cp a, 2
-	jp z, return_from_movement_p2
+	jp z, _return_p2
 
-	; If we can move, store the current location then move
-	ld ix, game_state
+	ld ix, game_state					; If we are at the edge don't do anything
 	ld a, (ix + OFFSET_P2_Y)
-	ld (ix + OFFSET_P2_OLD_Y), a
-	dec a
+	ld (ix + OFFSET_P2_OLD_Y), a		; Store the current location
+	
+	dec a								; Move
 	ld (ix + OFFSET_P2_Y), a
 	ld a, CHR_PLAYER_UP
 	ld (ix + OFFSET_P2_CHAR), a
-	jp return_from_movement_p2
+	jp _return_p2
 
 _p2_move_down:
 
-	; Check for edge of playing area
-	ld ix, game_state
+	ld ix, game_state					; Check for edge of playing area
 	ld a, (ix + OFFSET_P2_Y);
 	cp a, 22
-	jp z, return_from_movement_p2
+	jp z, _return_p2
 
-	; If we can move, store the current location then move
-	ld ix, game_state
+	ld ix, game_state					; If we are at the edge don't do anything
 	ld a, (ix + OFFSET_P2_Y)
-	ld (ix + OFFSET_P2_OLD_Y), a
-	inc a
+	ld (ix + OFFSET_P2_OLD_Y), a		; Store the current location
+	
+	inc a								; Move
 	ld (ix + OFFSET_P2_Y), a
 	ld a, CHR_PLAYER_DOWN
 	ld (ix + OFFSET_P2_CHAR), a
-	jp return_from_movement_p2 
+	jp _return_p2 
 
 _p2_move_left:
 
 	; Check for edge of playing area
-	ld ix, game_state
+	ld ix, game_state					; Check for edge of playing area
 	ld a, (ix + OFFSET_P2_X);
 	cp a, 2
-	jp z, return_from_movement_p2
+	jp z, _return_p2
 
-	; If we can move, store the current location then move
-	ld ix, game_state
+	ld ix, game_state					; If we are at the edge don't do anything
 	ld a, (ix + OFFSET_P2_X)
-	ld (ix + OFFSET_P2_OLD_X), a
-	dec a
+	ld (ix + OFFSET_P2_OLD_X), a		; Store the current location
+	
+	dec a								; Move
 	ld (ix + OFFSET_P2_X), a
 	ld a, CHR_PLAYER_LEFT
 	ld (ix + OFFSET_P2_CHAR), a
-	jp return_from_movement_p2
+	jp _return_p2
 
 _p2_move_right:
 
 	; Check for edge of playing area
-	ld ix, game_state
+	ld ix, game_state					; Check for edge of playing area
 	ld a, (ix + OFFSET_P2_X);
 	cp a, 39
-	jp z, return_from_movement_p2
+	jp z, _return_p2
 
-	; If we can move, store the current location then move
-	ld ix, game_state
+	ld ix, game_state					; If we are at the edge don't do anything
 	ld a, (ix + OFFSET_P2_X)
-	ld (ix + OFFSET_P2_OLD_X), a
-	inc a
+	ld (ix + OFFSET_P2_OLD_X), a		; Store the current location
+	
+
+	inc a								; Move
 	ld (ix + OFFSET_P2_X), a
 	ld a, CHR_PLAYER_RIGHT
 	ld (ix + OFFSET_P2_CHAR), a
-	jp return_from_movement_p2
+	jp _return_p2
 
 _p2_fire:
 
 	; Return to goal
-	ld ix, game_state
+	ld ix, game_state					; Store the current location
 	ld a, (ix + OFFSET_P2_X)
 	ld (ix + OFFSET_P2_OLD_X), a
-	ld a, 39
+	
+	ld a, 39							; Move
 	ld (ix + OFFSET_P2_X), a
 	ld a, CHR_PLAYER_LEFT
 	ld (ix + OFFSET_P2_CHAR), a
-	jp return_from_movement_p2
+	jp _return_p2
 
 
 ; Print a string
 ; --------------
-; In: HL = address of string to print (terminated by #00)
 _print_string:
 
-	ld a, (hl)
+	ld a, (hl)							; HL = address of string to print (terminated by #00)
 	cp #00
 	ret z
 	inc hl
