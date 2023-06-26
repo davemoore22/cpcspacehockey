@@ -144,5 +144,27 @@ _find_abs_diff_numbers:
 	or a
 	ret p
 	neg
-    ret	
+    ret
+
+_check_diff:							; Returns #FF in A if condition is met
+
+	ld a, (ix)							; IX = Ball coordinate
+	ld b, a	
+	ld a, (iy)							; IY = Player coordinate
+	sub b
+	cp d								; D is difference to check against
+	jr z, _set_equal
+	ld a, #00
+	ret
+
+	_set_equal:
+		ld a, #FF
+		ret
+
+_beep:
+
+	ld a, 7
+	call TXT_OUTPUT
+	ret
+	
 

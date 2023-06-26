@@ -57,13 +57,13 @@ matrix_table:							; Space for UDCs
 
 game_state:								; Space for game state
 
-	DEFB 0, 0, 0, 0, 0, 0				; Player 1 old_x, old_y, x, y, character, score
-	DEFB 0, 0, 0, 0, 0, 0				; Player 2 old_x, old_y, x, y, character, score
+	DEFB 0, 0, 0, 0, 0, 0				; P1 old_x, old_y, x, y, character, score
+	DEFB 0, 0, 0, 0, 0, 0				; P2 old_x, old_y, x, y, character, score
 	DEFB 0, 0, 0, 0						; Ball old_x, old_y, x, y
 
-collision_state:
+collision_state:						; Colision Detection variables
 
-	DEFB 0, 0, 0, 0, 0, 0				; Colision Detection variables
+	DEFB 0, 0, 0, 0, 0, 0				; P1 offset_x, offset_y, P2 offset_x, offset_y, P1/P2 flags
 
 quit_flag:
 

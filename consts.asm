@@ -47,13 +47,13 @@ CHR_SPACE EQU ' '
 UDG_FIRST EQU #FA						; First UDG
 
 ; Game State Offsets
-P1_OLD_Y EQU #00						; Player 1 info
+P1_OLD_Y EQU #00						; P1 info
 P1_OLD_X EQU #01
 P1_Y EQU #02
 P1_X EQU #03
 P1_CHAR EQU #04
 P1_SCORE EQU #05
-P2_OLD_Y EQU #06						; Player 2 info
+P2_OLD_Y EQU #06						; P2 info
 P2_OLD_X EQU #07
 P2_Y EQU #08
 P2_X EQU #09
