@@ -9,7 +9,8 @@ main_game_loop:
 	ret z
 
 	call refresh_game_screen			; Otherwise continue
-	call handle_input
+	call handle_input_player_1
+	call handle_input_player_2
 	call handle_ball_movement
 	call check_for_goal_scored
 
@@ -135,29 +136,29 @@ initalise_game_state:
 	ld (ix), 0
 	ld (ix + 1), GAME_TIME_MSB
 
-reset_player_and_ball_positions:
+	reset_player_and_ball_positions:
 
-	ld ix, game_state					; Initial data for player 1
-	ld (ix + P1_Y), 16
-	ld (ix + P1_X), 5
-	ld (ix + P1_OLD_Y), 16
-	ld (ix + P1_OLD_X), 5
-	ld (ix + P1_CHAR), CHR_RIGHT
-	ld (ix + P1_SCORE), 0
+		ld ix, game_state				; Initial data for player 1
+		ld (ix + P1_Y), 16
+		ld (ix + P1_X), 5
+		ld (ix + P1_OLD_Y), 16
+		ld (ix + P1_OLD_X), 5
+		ld (ix + P1_CHAR), CHR_RIGHT
+		ld (ix + P1_SCORE), 0
 
-	ld (ix + P2_Y), 5					; Initial data for player 2
-	ld (ix + P2_X), 35
-	ld (ix + P2_OLD_Y), 5
-	ld (ix + P2_OLD_X), 35
-	ld (ix + P2_CHAR), CHR_LEFT
-	ld (ix + P2_SCORE), 0
+		ld (ix + P2_Y), 5				; Initial data for player 2
+		ld (ix + P2_X), 35
+		ld (ix + P2_OLD_Y), 5
+		ld (ix + P2_OLD_X), 35
+		ld (ix + P2_CHAR), CHR_LEFT
+		ld (ix + P2_SCORE), 0
 
-	ld (ix + BALL_OLD_Y), 11			; Initial ball position
-	ld (ix + BALL_OLD_X), 20
-	ld (ix + BALL_Y), 11
-	ld (ix + BALL_X), 20
+		ld (ix + BALL_OLD_Y), 11		; Initial ball position
+		ld (ix + BALL_OLD_X), 20
+		ld (ix + BALL_Y), 11
+		ld (ix + BALL_X), 20
 
-	ret
+		ret
 
 ; Draw game UI
 ; ------------
@@ -196,6 +197,7 @@ draw_game_screen:
 	ld a, CHR_BANNER					; Draw bottom HUD
 	ld b, 40
 	ld hl, #0117
+
 	loop:
 		push hl
 		push bc
@@ -212,7 +214,7 @@ draw_game_screen:
 	ld hl, str_bottom_text
 	call _print_string
 
-	ld hl, #0419
+	ld hl, #0419						; Draw scores
 	call TXT_SET_CURSOR
 	ld hl, str_game_score_p1
 	call _print_string
@@ -222,8 +224,7 @@ draw_game_screen:
 	ld hl, str_game_score_p2
 	call _print_string
 
-	; Draw initial time
-	ld hl, #1219
+	ld hl, #1219						; Draw initial time
 	call TXT_SET_CURSOR
 	ld de, time_left
 	ld b, GAME_TIME_DIGITS
@@ -336,59 +337,83 @@ refresh_game_screen
 ; if player is adjacent to the ball then move it away in the opposite direction
 handle_ball_movement:
 
-	or a
-	ld a, (game_state + BALL_X)			; Work out the offset from first player to the ball
-	ld b, a
-	ld a, (game_state + P1_X)
-	call _find_abs_diff_numbers
-	ld c, a
-	or a
+	ld b, 6								; Reset
+	ld ix, collision_state
+	ld a, 0
+
+	reset_loop:
+		ld (ix), 0
+		inc ix
+		djnz reset_loop
+
+	call calculate_player_1_position	; Get the distance from each player to the ball
+	call calculate_player_2_position	; ABS(distance) stored in bytes at collision_state
+
+	ld ix, collision_state				; Check if player 1 is adjacent to the ball
+	call check_player_adjacent
+	ret z								; Return early if not 0 or 1
+	ret nc
+	inc ix
+	call check_player_adjacent
+	ret z								; Return early if not 0 or 1
+	ret nc
+
+	; If we have reached here, player 1 is adjacent to the ball so flag it
+	ld ix, collision_state + 4
+	ld ix, #FF
+
+	ld ix, collision_state + 2			; Check if player 1 is adjacent to the ball
+	call check_player_adjacent
+	ret z								; Return early if not 0 or 1
+	ret nc
+	ld ix, collision_state + 3
+	call check_player_adjacent
+	ret z								; Return early if not 0 or 1
+	ret nc
+	
+	; If we have reached here, player 2 is adjacent to the ball so flag it
+	ld ix, collision_state + 5
+	ld ix, #FF
+
+	ret
+
+check_player_adjacent:
+
+	ld a, (ix)							
+	cp 2
+	ret
+	
+; Work out the position of player 1 relative to the ball
+calculate_player_1_position:
+
 	ld a, (game_state + BALL_Y)
 	ld b, a
 	ld a, (game_state + P1_Y)
-	call _find_abs_diff_numbers
-	ld b, a								; Store in B and C for now
+	call _find_abs_diff_numbers			; Equivalent of ABS(A-B)
+	ld (collision_state), a
 
-	or a
-	ld a, (game_state + BALL_X)			; Work out the offset from second player to the ball
+	ld a, (game_state + BALL_X)			
 	ld b, a
-	ld a, (game_state + P2_X)
-	call _find_abs_diff_numbers
-	ld e, a
-	or a
-	ld a, (game_state + BALL_Y)			
+	ld a, (game_state + P1_X)
+	call _find_abs_diff_numbers			
+	ld (collision_state + 1), a
+
+	ret
+
+; Work out the position of player 2 relative to the ball
+calculate_player_2_position:
+
+	ld a, (game_state + BALL_Y)
 	ld b, a
 	ld a, (game_state + P2_Y)
 	call _find_abs_diff_numbers
-	ld d, a								; Store in D and E for now
+	ld (collision_state + 2), a
 
-	or a
-	ld a, d								; Quickly exit if players are not adjacent
-	cp 2
-	ret z
-	ret nc
-
-	or a
-	ld a, e								
-	cp 2
-	ret z
-	ret nc
-
-	or a
-	ld a, b								
-	cp 2
-	ret z
-	ret nc
-
-	or a
-	ld a, c								
-	cp 2
-	ret z
-	ret nc
-
-	ld a, 7
-	call TXT_OUTPUT
-
+	ld a, (game_state + BALL_X)			
+	ld b, a
+	ld a, (game_state + P2_X)
+	call _find_abs_diff_numbers
+	ld (collision_state + 3), a
 
 	ret
 
@@ -401,7 +426,7 @@ check_for_goal_scored:
 
 ; Check for any inputs
 ; --------------------
-handle_input:
+handle_input_player_1:
 
 	ld a, P1_UP							; Check for player 1 controls
 	call KM_TEST_KEY
@@ -423,9 +448,13 @@ handle_input:
 	call KM_TEST_KEY
 	jp nz, p1_return_goal
 
-return_p1:
+	return_p1:
 
-	ld a, P2_UP							; Check for player 2 controls
+		ret
+
+handle_input_player_2:
+
+	ld a, P2_UP						; Check for player 2 controls
 	call KM_TEST_KEY
 	jp nz, p2_move_up
 
@@ -445,9 +474,9 @@ return_p1:
 	call KM_TEST_KEY
 	jp nz, p2_return_goal
 
-return_p2:
+	return_p2:
 
-	ret
+		ret
 
 ; Player 1 movement
 ; -----------------
@@ -456,7 +485,7 @@ p1_move_up:
 
 	ld a, (game_state + P1_Y)			; Check for edge of playing area
 	cp a, 2
-	jp z, return_p1					; If we are at the edge don't do anything
+	jp z, return_p1						; If we are at the edge don't do anything
 
 	ld a, (game_state + P1_X)			; Store the current location
 	ld (game_state + P1_OLD_X), a
@@ -474,7 +503,7 @@ p1_move_down:
 
 	ld a, (game_state + P1_Y)			; Check for edge of playing area
 	cp a, 22
-	jp z, return_p1					; If we are at the edge don't do anything
+	jp z, return_p1						; If we are at the edge don't do anything
 
 	ld a, (game_state + P1_X)			; Store the current location
 	ld (game_state + P1_OLD_X), a
@@ -508,7 +537,7 @@ p1_move_right:
 
 	ld a, (game_state + P1_X)			; Check for edge of playing area
 	cp a, 39
-	jp z, return_p1					; If we are at the edge don't do anything
+	jp z, return_p1						; If we are at the edge don't do anything
 
 	ld a, (game_state + P1_Y)			; Store the current location
 	ld (game_state + P1_OLD_Y), a
@@ -542,7 +571,7 @@ p2_move_up:
 
 	ld a, (game_state + P2_Y)			; Check for edge of playing area
 	cp a, 2
-	jp z, return_p2					; If we are at the edge don't do anything
+	jp z, return_p2						; If we are at the edge don't do anything
 
 	ld a, (game_state + P2_X)			; Store the current location
 	ld (game_state + P2_OLD_X), a
@@ -559,7 +588,7 @@ p2_move_down:
 
 	ld a, (game_state + P2_Y)			; Check for edge of playing area
 	cp a, 22
-	jp z, return_p2					; If we are at the edge don't do anything
+	jp z, return_p2						; If we are at the edge don't do anything
 
 	ld a, (game_state + P2_X)			; Store the current location
 	ld (game_state + P2_OLD_X), a
@@ -594,7 +623,7 @@ p2_move_right:
 
 	ld a, (game_state + P2_X)			; Check for edge of playing area
 	cp a, 39
-	jp z, return_p2					; If we are at the edge don't do anything
+	jp z, return_p2						; If we are at the edge don't do anything
 
 	ld a, (game_state + P2_Y)			; Store the current location
 	ld (game_state + P2_OLD_Y), a

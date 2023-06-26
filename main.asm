@@ -61,6 +61,10 @@ game_state:								; Space for game state
 	DEFB 0, 0, 0, 0, 0, 0				; Player 2 old_x, old_y, x, y, character, score
 	DEFB 0, 0, 0, 0						; Ball old_x, old_y, x, y
 
+collision_state:
+
+	DEFB 0, 0, 0, 0, 0, 0				; Colision Detection variables
+
 quit_flag:
 
 	DEFB #00							; Set if we want to quit
