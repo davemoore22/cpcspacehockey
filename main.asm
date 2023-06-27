@@ -38,22 +38,22 @@ ORG #8000
 BEGIN_CODE
 
 setup:
-	call	setup_udcs		; Title screen and setup
+	call	setup_udc		; Redefine characters
 start_game:
-	call	show_title_screen
-	call 	wait_for_keys
+	call	show_title		; Title screen
+	call 	wait_for_key
 
 	ld 	a, (quit_flag)		; Exit if Q key is pressed
 	cp 	#FF
 	ret 	z
 
 restart_game:
-	call 	initalise_game_state
-	call 	draw_game_screen	; Main game loop
-	call 	main_game_loop
+	call 	initalise
+	call 	refresh_ui	
+	call 	main_loop		; Main game loop
 
-	call 	game_over_screen	; Game over
-	call 	wait_for_keys
+	call 	show_game_over		; Game over screen
+	call 	wait_for_key
 
 	ld a, 	(quit_flag)		; Exit if Q key is pressed
 	cp 	#FF

@@ -36,13 +36,13 @@ game_state:				; Space for game state
 	DEFB 	0, 0, 0, 0, 0, 0	; P2 old_x/y, x/y, character, score
 	DEFB 	0, 0, 0, 0		; Ball old_x/y, x/y
 
-collision_state:			; Colision Detection variables
-	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_x/y, P1/P2 flags
+cd_state:				; Colision Detection variables
+	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_x/y, P1/P2 adjacent flags
 
 quit_flag:
 	DEFB 	0			; Set to #FF if we want to quit
 
-time_left:				; Space for timer
+timer:				; Space for timer
 	DEFB 	0, 0			; Time left (Packed BCD - 4 Digits)
 
 time_decrement:

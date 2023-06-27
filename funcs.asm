@@ -26,7 +26,8 @@
 
 ;###############################################################################
 ; Print a string
-; Input: HL = address of string to print (terminated by 0)
+;
+; Input:	HL = address of string to print (terminated by 0)
 ;###############################################################################
 
 print_string:
@@ -39,7 +40,9 @@ print_string:
 
 ;###############################################################################
 ; Print a 3-digit decimal number
-; Input: A = 8-bit value to display
+;
+; Input:	A = 8-bit value to display
+;
 ; Routine from https://tinyurl.com/mr39uep5
 ;###############################################################################
 
@@ -60,7 +63,8 @@ dec_divide:
 	jr	dec_divide
 
 display_dec_digit:
-	add	a, b			; Add divisor because dividend was negative, leaving remainder
+	add	a, b			; Add divisor because dividend was
+					; negative, leaving remainder
 	push	af
 	ld	a, c			; Get digit value
 	add	a, '0'			; Convert value into ASCII character
@@ -68,123 +72,175 @@ display_dec_digit:
 	pop	af
 	ret
 
-; BCD Functions
+;###############################################################################
+; Internal BCD Function used to shift registers along a number of bytes so that
+; commands can start from the MSB
 ;
-; https://chibiakumas.com/z80/advanced.php
+; Input:	B = number of bytes to shift HL and DE along
+;
+; Routine from https://chibiakumas.com/z80/advanced.php
+;###############################################################################
 
-; Some of our commands need to start from the MSB, this routine will shift HL and DE along b bytes
-_bcd_get_end:
+bcd_get_end:
+	push	bc
+	ld	c, b			; We want to add BC, but we need to
+					; count the number of bytes minus one
+	dec	c
+	ld	b, 0
+	add	hl, bc
+	ex	hl, de			; We've done HL, but we also do DE
 
-	push bc
-		ld c, b							; We want to add BC, but we need to number of bytes - 1
-		dec c
-		ld b, 0
-		add hl, bc
-		ex hl, de						; We've done HL, but we also want to do DE
-
-		add hl, bc
-		ex hl, de
-	pop bc
+	add	hl, bc
+	ex	hl, de
+	pop	bc
 	ret
 
-_bcd_show:
+;###############################################################################
+; Internal BCD Function used to shift registers along a number of bytes so that
+; commands can start from the MSB
+;
+; Input:	DE = location of BCD number array
+; Input:	B = number of bytes in BCD number array
+;
+; Routine from https://chibiakumas.com/z80/advanced.php
+;###############################################################################
+bcd_show:
+	call	bcd_get_end		; Need to process from the MSB not LSB
 
-	call _bcd_get_end					; Need to process from the end of the array
+bcd_show_loop:
+	ld	a, (de)
+	and	%11110000		; Use the high nibble
+	rrca
+	rrca
+	rrca
+	rrca
+	add	'0'			; Convert to a letter and print it
+	call	TXT_OUTPUT
+	ld	a, (de)
+	dec	de
+	and	%00001111		; Now the low nibble
+	add	'0'
+	call	TXT_OUTPUT
+	djnz	bcd_show_loop		; Next byte
+	ret
 
-	_bcd_show_direct:
+;###############################################################################
+; Subtract two BCD numbers
+;
+; Input:	DE = number to subtract from
+; Input:	HL = number to subtract
+; Input:	B = number of bytes in BCD number array
+;
+; Routine from https://chibiakumas.com/z80/advanced.php
+;###############################################################################
 
-		ld a, (de)
-		and %11110000					; Use the high nibble
-		rrca
-		rrca
-		rrca
-		rrca
-		add '0'							; Convert to a letter and print it
-		call TXT_OUTPUT
-		ld a, (de)
-		dec de
-		and %00001111					; Now the low nibble
-		add '0'
-		call TXT_OUTPUT
-		djnz _bcd_show_direct			; Next byte
-		ret
+bcd_subtract:							
+	or	a			; Clear carry flag
 
-_bcd_subtract:							; Clear carry flag
+bcd_subtract_loop:
+	ld	a, (de)
+	sbc	(hl)			; Subtract HL from DE with carry
+	daa				; Fix A using DAA
+	ld	(de), a			; Store it
 
-	or a
+	inc	de
+	inc	hl
+	djnz	bcd_subtract_loop
+	ret
 
-	_bcd_subtract_again:
+;###############################################################################
+; Add two BCD numbers
+;
+; Input:	DE = numbet to add to
+; Input:	HL = number to add
+; Input:	B = number of bytes in BCD number array
+;
+; Routine from https://chibiakumas.com/z80/advanced.php
+;###############################################################################
 
-		ld a, (de)
-		sbc (hl)						; Subtract HL from DE with carry
-		daa								; Fix A using DAA
-		ld (de), a						; Store it
+bcd_add:
+	or	a			; Clear carry flag
 
-		inc de
-		inc hl
-		djnz _bcd_subtract_again
-		ret
+bcd_add_loop:
+	ld	a, (de)
+	adc	(hl)			; Add HL to DE with carry
+	daa				; Fix A using DAA
+	ld	(de), a			; Store it
 
-_bcd_add:
+	inc	de
+	inc	hl
+	djnz	bcd_add_loop
+	ret
 
-	or a								; Clear carry flag
+;###############################################################################
+; Compare two BCD numbers
+;
+; Input:	DE = first number to compare
+; Input:	HL = second number to compare
+; Input:	B = number of bytes in BCD number array
+; Output:	Z flag set if two numbers are equal
+;
+; Routine from https://chibiakumas.com/z80/advanced.php
+;###############################################################################
 
-	_bcd_add_again:
+bcd_compare:
+	call	bcd_get_end		; Need to process from the MSB not LSB
 
-		ld a, (de)
-		adc (hl)						; Add HL to DE with carry
-		daa								; Fix A using DAA
-		ld (de), a						; Store it
+bcd_compare_loop:			
+	ld	a, (de)			; Start from MSB
+	cp	(hl)
+	ret	c			; Smaller
+	ret	nz			; Greater
+	dec	de			; Equal so move onto next byte
+	dec	hl
+	djnz	bcd_compare_loop
+	or	a 			; Clear the carry flag
+	ret
 
-		inc de
-		inc hl
-		djnz _bcd_add_again
-		ret
+;###############################################################################
+; Get the Absolute Difference (ABS) between two 8-bit numbers
+;
+; Input:	A = first number
+; Input:	B = second number
+; Output:	A = absolute difference
+;###############################################################################
 
-_bcd_compare:
-
-	call _bcd_get_end
-
-	_bcd_compare_direct:				; Start from MSB
-
-		ld a, (de)
-		cp (hl)
-		ret c							; Smaller
-		ret nz							; Greater
-		dec de							; Equal so move onto next byte
-		dec hl
-		djnz _bcd_compare_direct
-		or a 							; Clear the carry flag
-		ret
-
-
-_find_abs_diff_numbers:
-
-	sub b								; A, B contain the numbers to compare
-	or a
-	ret p
+find_abs:
+	sub	b
+	or	a
+	ret	p
 	neg
-    ret
-
-_check_diff:							; Returns #FF in A if condition is met
-
-	ld a, (ix)							; IX = Ball coordinate
-	ld b, a	
-	ld a, (iy)							; IY = Player coordinate
-	sub b
-	cp d								; D is difference to check against
-	jr z, _set_equal
-	ld a, #00
 	ret
 
-	_set_equal:
-		ld a, #FF
-		ret
+;###############################################################################
+; Check if two 8-bit numbers are different by a certain amount
+;
+; Input:	IX = first number
+; Input:	IY = second number
+; Input:	D = difference to check for
+; Output:	A = #FF if correct difference, else #00
+;###############################################################################
 
-_beep:
-
-	ld a, 7
-	call TXT_OUTPUT
+check_diff:				
+	ld	a, (ix)			
+	ld	b, a	
+	ld	a, (iy)			
+	sub	b
+	cp	d			
+	jr	z, check_diff_equal
+	ld	a, #00
 	ret
-	
+
+check_diff_equal:
+	ld a,	#FF
+	ret
+
+;###############################################################################
+; Beep!
+;###############################################################################
+
+beep:
+	ld	a, 7
+	call	TXT_OUTPUT
+	ret
 
