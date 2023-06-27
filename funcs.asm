@@ -1,52 +1,72 @@
-; Print Functions
-
-; Print a string
-; --------------
-_print_string:
-
-	ld a, (hl)							; HL = address of string to print (terminated by 0)
-	cp 0
-	ret z
-	inc hl
-	call TXT_OUTPUT
-	jr _print_string
-
-
-; Print a decimal number
-; ----------------------
+; ******************************************************************************
+; Copyright (C) 2023 Dave Moore
 ;
-; https://tinyurl.com/mr39uep5
+; This file is part of Space-Hockey.
+;
+; Space-Hockey is free software: you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free Software
+; Foundation, either version 2 of the License, or (at your option) any later
+; version.
+;
+; Space-Hockey is distributed in the hope that it will be useful, but WITHOUT 
+; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+; FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+; details.
+;
+; You should have received a copy of the GNU General Public License along with
+; Space-Hockey.  If not, see <http://www.gnu.org/licenses/>.
+;
+; If you modify this program, or any covered work, by linking or combining it
+; with the libraries referred to in README (or a modified version of said
+; libraries), containing parts covered by the terms of said libraries, the
+; licensors of this program grant you additional permission to convey the 
+; resulting work.
+; ******************************************************************************
 
-_print_number:							; A = 8 bit value
 
-	print_decimal_byte:
+;###############################################################################
+; Print a string
+; Input: HL = address of string to print (terminated by 0)
+;###############################################################################
 
-		ld b, 100						; Divisor to obtain 100's digit value
-		call print_decimal_digit		; Display digit
-		ld b, 10						; Divisor to obtain 10's digit value
-		call print_decimal_digit   		; Display digit
-		ld b, 1							; Divisor to obtain 1's digit value
+print_string:
+	ld	a, (hl)
+	cp	0
+	ret	z
+	inc	hl
+	call	TXT_OUTPUT
+	jr	print_string
 
-	print_decimal_digit:
+;###############################################################################
+; Print a 3-digit decimal number
+; Input: A = 8-bit value to display
+; Routine from https://tinyurl.com/mr39uep5
+;###############################################################################
 
-		ld c, 0							; Zeroise result
+print_dec_number:
+	ld	b, 100			; Divisor to obtain 100's digit value
+	call	print_dec_digit		; Display digit
+	ld	b, 10			; Divisor to obtain 10's digit value
+	call	print_dec_digit		; Display digit
+	ld	b, 1			; Divisor to obtain 1's digit value
 
-	decimal_divide:
+print_dec_digit:
+	ld	c, 0			; Zeroise result
 
-		sub b							; Subtract divisor
-		jr c, display_decimal_digit 	; If dividend is less than divisor, the division has finished
-		inc c							; Increment digit value
-		jr decimal_divide
+dec_divide:
+	sub	b			; Subtract divisor
+	jr 	c, display_dec_digit	; If dividend < divisor, division ended
+	inc	c			; Increment digit value
+	jr	dec_divide
 
-	display_decimal_digit:
-
-		add a, b						; Add divisor because dividend was negative, leaving remainder
-		push af
-			ld a, c						; Get digit value
-			add a, '0'					; Convert value into ASCII character
-			call TXT_OUTPUT				; Display digit
-		pop af
-		ret
+display_dec_digit:
+	add	a, b			; Add divisor because dividend was negative, leaving remainder
+	push	af
+	ld	a, c			; Get digit value
+	add	a, '0'			; Convert value into ASCII character
+	call	TXT_OUTPUT		; Display digit
+	pop	af
+	ret
 
 ; BCD Functions
 ;

@@ -1,10 +1,35 @@
+; ******************************************************************************
+; Copyright (C) 2023 Dave Moore
+;
+; This file is part of Space-Hockey.
+;
+; Space-Hockey is free software: you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free Software
+; Foundation, either version 2 of the License, or (at your option) any later
+; version.
+;
+; Space-Hockey is distributed in the hope that it will be useful, but WITHOUT 
+; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+; FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+; details.
+;
+; You should have received a copy of the GNU General Public License along with
+; Space-Hockey.  If not, see <http://www.gnu.org/licenses/>.
+;
+; If you modify this program, or any covered work, by linking or combining it
+; with the libraries referred to in README (or a modified version of said
+; libraries), containing parts covered by the terms of said libraries, the
+; licensors of this program grant you additional permission to convey the 
+; resulting work.
+; ******************************************************************************
+
 ; Handle main game loop
 ; ---------------------
 main_game_loop:
 
 	ld de, time_left					; Check for game over (i.e. main timer expired)
 	ld hl, time_game_over
-	ld b, GAME_TIME_DIGITS
+	ld b, TIME_DIGITS
 	call _bcd_compare
 	ret z
 
@@ -17,14 +42,14 @@ main_game_loop:
 
 	ld de, time_left					; Decrement the timer
 	ld hl, time_decrement
-	ld b, GAME_TIME_DIGITS
+	ld b, TIME_DIGITS
 	call _bcd_subtract
 
 	jp main_game_loop
 
 ; Display title screen
 ; --------------------
-display_title_screen:
+show_title_screen:
 
 	call SCR_RESET						; Initialise and clear the screen
 	call SCR_CLEAR
@@ -44,25 +69,25 @@ display_title_screen:
 	ld hl, #0802						; Display title text
 	call TXT_SET_CURSOR
 	ld hl, str_title
-	call _print_string
+	call print_string
 
 	ld a, 2								; Display credits
 	call TXT_SET_PEN
 	ld hl, #0304
 	call TXT_SET_CURSOR
 	ld hl, str_credits_1
-	call _print_string
+	call print_string
 	ld hl, #0205
 	call TXT_SET_CURSOR
 	ld hl, str_credits_2
-	call _print_string
+	call print_string
 
 	ld a, 1								; Display ready message
 	call TXT_SET_PEN
 	ld hl, #0717
 	call TXT_SET_CURSOR
 	ld hl, str_start_game
-	call _print_string
+	call print_string
 
 	ret
 
@@ -97,34 +122,34 @@ wait_for_keys:
 
 ; Setup UDCs
 ; ----------
-setup_user_defined_characters:
+setup_udcs:
 
-	ld de, UDG_FIRST					; Set the start of the UDCs
+	ld de, UDC_FIRST					; Set the start of the UDCs
 	ld hl, matrix_table
 	call TXT_SET_M_TABLE
 
-	ld a, CHR_BANNER					; Load the UDCs starting from UDG_FIRST
-	ld hl, udg_banner
+	ld a, CHR_BANNER					; Load the UDCs starting from UDC_FIRST
+	ld hl, udc_banner
 	call TXT_SET_MATRIX
 
 	ld a, CHR_UP
-	ld hl, udg_player_up
+	ld hl, udc_player_up
 	call TXT_SET_MATRIX
 
 	ld a, CHR_DOWN
-	ld hl, udg_player_down
+	ld hl, udc_player_down
 	call TXT_SET_MATRIX
 
 	ld a, CHR_LEFT
-	ld hl, udg_player_left
+	ld hl, udc_player_left
 	call TXT_SET_MATRIX
 
 	ld a, CHR_RIGHT
-	ld hl, udg_player_right
+	ld hl, udc_player_right
 	call TXT_SET_MATRIX
 
 	ld a, CHR_BALL
-	ld hl, udg_ball
+	ld hl, udc_ball
 	call TXT_SET_MATRIX
 
  	ret
@@ -135,7 +160,7 @@ initalise_game_state:
 
 	ld ix, time_left					; Store the initial timer value
 	ld (ix), 0
-	ld (ix + 1), GAME_TIME_MSB
+	ld (ix + 1), TIME_MSB
 
 	reset_player_and_ball_positions:
 
@@ -213,22 +238,22 @@ draw_game_screen:
 	ld hl, #0818
 	call TXT_SET_CURSOR
 	ld hl, str_bottom_text
-	call _print_string
+	call print_string
 
 	ld hl, #0419						; Draw scores
 	call TXT_SET_CURSOR
 	ld hl, str_game_score_p1
-	call _print_string
+	call print_string
 
 	ld hl, #1C19
 	call TXT_SET_CURSOR
 	ld hl, str_game_score_p2
-	call _print_string
+	call print_string
 
 	ld hl, #1219						; Draw initial time
 	call TXT_SET_CURSOR
 	ld de, time_left
-	ld b, GAME_TIME_DIGITS
+	ld b, TIME_DIGITS
 	call _bcd_show
 
 	ret
@@ -247,28 +272,28 @@ game_over_screen:
 	ld hl, #0D02						; Display game over message
 	call TXT_SET_CURSOR
 	ld hl, str_game_over
-	call _print_string
+	call print_string
 
 	ld a, 3								; Display scores
 	call TXT_SET_PEN
 	ld hl, #0F08
 	call TXT_SET_CURSOR
 	ld hl, str_p1_name
-	call _print_string
+	call print_string
 
 	ld a, 1
 	call TXT_SET_PEN
 	ld hl, #0F0A
 	call TXT_SET_CURSOR
 	ld hl, str_p2_name
-	call _print_string
+	call print_string
 
 	ld a, 1								; Display play again message
 	call TXT_SET_PEN
 	ld hl, #0517
 	call TXT_SET_CURSOR
 	ld hl, str_play_again
-	call _print_string
+	call print_string
 
 	ret
 
@@ -283,7 +308,7 @@ refresh_game_screen
 	ld hl, #1219
 	call TXT_SET_CURSOR
 	ld de, time_left
-	ld b, GAME_TIME_DIGITS
+	ld b, TIME_DIGITS
 	call _bcd_show
 
 	ld a, 3								; Erase Ball
@@ -400,7 +425,7 @@ check_move_ball_east:
 	ret
 
 ; IF x%=g%+1 AND y%=h% OR a%=g%+1 AND b%=h% THEN g%=g%-5
-	; IF x%=g% AND y%=h% OR a%=g%+2 AND b%=h%-1 THEN h%=h%+5
+	; IF x%=g% AND y%=h% OR a%=g%+1 AND b%=h%-1 THEN h%=h%+5
 	; IF x%=g% AND y%=h%+1 OR a%=g% AND b%=h%+1 THEN h%=h%-5
 
 	; IF x%=g%-1 AND y%=h%-1 OR a%=g%-1 AND b%=h%-1 THEN g%=g%+5:h%=h%+5

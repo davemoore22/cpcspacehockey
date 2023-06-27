@@ -1,43 +1,69 @@
+; ******************************************************************************
+; Copyright (C) 2023 Dave Moore
+;
+; This file is part of Space-Hockey.
+;
+; Space-Hockey is free software: you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free Software
+; Foundation, either version 2 of the License, or (at your option) any later
+; version.
+;
+; Space-Hockey is distributed in the hope that it will be useful, but WITHOUT
+; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+; FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+; details.
+;
+; You should have received a copy of the GNU General Public License along with
+; Space-Hockey.  If not, see <http://www.gnu.org/licenses/>.
+;
+; If you modify this program, or any covered work, by linking or combining it
+; with the libraries referred to in README (or a modified version of said
+; libraries), containing parts covered by the terms of said libraries, the
+; licensors of this program grant you additional permission to convey the
+; resulting work.
+; ******************************************************************************
+
+;###############################################################################
 ; Space-Hockey
 ; Original (c) David Hay 1988 (AA42)
 ; Z80 Rewrite (c) Dave Moore 2023
 ;
+; Example compilation and running with rasm and caprice32 under Linux:
+;
 ; ../rasm/rasm_linux64 -eo ./main.asm
 ; ../caprice32/cap32 -a "MEMORY &7fff" -i ./hockey.bin -o 0x8000
+;###############################################################################
 
 ORG #8000
 BEGIN_CODE
 
 setup:
-
-	call setup_user_defined_characters	; Title screen and setup
-
+	call	setup_udcs		; Title screen and setup
 start_game:
+	call	show_title_screen
+	call 	wait_for_keys
 
-	call display_title_screen
-	call wait_for_keys
-
-	ld a, (quit_flag)					; Exit if Q key is pressed
-	cp #FF
-	ret z
+	ld 	a, (quit_flag)		; Exit if Q key is pressed
+	cp 	#FF
+	ret 	z
 
 restart_game:
+	call 	initalise_game_state
+	call 	draw_game_screen	; Main game loop
+	call 	main_game_loop
 
-	call initalise_game_state
-	call draw_game_screen				; Main game loop
-	call main_game_loop
+	call 	game_over_screen	; Game over
+	call 	wait_for_keys
 
-	call game_over_screen				; Game over
-	call wait_for_keys
+	ld a, 	(quit_flag)		; Exit if Q key is pressed
+	cp 	#FF
+	ret 	z
 
-	ld a, (quit_flag)					; Exit if Q key is pressed
-	cp #FF
-	ret z
-
-	jp restart_game
+	jp 	restart_game
 
 ALIGN #100
 
+; Include all the other game code/data
 INCLUDE 'game.asm'
 INCLUDE 'consts.asm'
 INCLUDE 'strings.asm'
@@ -45,41 +71,7 @@ INCLUDE 'funcs.asm'
 
 ALIGN #100
 
-matrix_table:							; Space for UDCs
-
-	DEFB 0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 0, 0, 0, 0, 0, 0, 0, 0
-
-
-game_state:								; Space for game state
-
-	DEFB 0, 0, 0, 0, 0, 0				; P1 old_x, old_y, x, y, character, score
-	DEFB 0, 0, 0, 0, 0, 0				; P2 old_x, old_y, x, y, character, score
-	DEFB 0, 0, 0, 0						; Ball old_x, old_y, x, y
-
-collision_state:						; Colision Detection variables
-
-	DEFB 0, 0, 0, 0, 0, 0				; P1 offset_x, offset_y, P2 offset_x, offset_y, P1/P2 flags
-
-quit_flag:
-
-	DEFB #00							; Set if we want to quit
-
-time_left:								; Space for timer
-
-	DEFB #00, #00						; Time left (Packed BCD - 4 Digits)
-
-time_decrement:
-
-	DEFB #01, #00						; Timer Decrement
-
-time_game_over:
-
-	DEFB #00, #00						; Game Over
+INCLUDE 'data.asm'
 
 END_CODE
 
