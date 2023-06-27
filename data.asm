@@ -42,7 +42,7 @@ cd_state:				; Colision Detection variables
 quit_flag:
 	DEFB 	0			; Set to #FF if we want to quit
 
-timer:				; Space for timer
+timer:					; Space for timer
 	DEFB 	0, 0			; Time left (Packed BCD - 4 Digits)
 
 time_decrement:

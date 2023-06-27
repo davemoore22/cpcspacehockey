@@ -46,23 +46,23 @@ print_string:
 ; Routine from https://tinyurl.com/mr39uep5
 ;###############################################################################
 
-print_dec_number:
+print_int:
 	ld	b, 100			; Divisor to obtain 100's digit value
-	call	print_dec_digit		; Display digit
+	call	print_int_digit		; Display digit
 	ld	b, 10			; Divisor to obtain 10's digit value
-	call	print_dec_digit		; Display digit
+	call	print_int_digit		; Display digit
 	ld	b, 1			; Divisor to obtain 1's digit value
 
-print_dec_digit:
+print_int_digit:
 	ld	c, 0			; Zeroise result
 
-dec_divide:
+print_int_dec_divide:
 	sub	b			; Subtract divisor
-	jr 	c, display_dec_digit	; If dividend < divisor, division ended
+	jr 	c, print_int_display	; If dividend < divisor, division ended
 	inc	c			; Increment digit value
-	jr	dec_divide
+	jr	print_int_dec_divide
 
-display_dec_digit:
+print_int_display:
 	add	a, b			; Add divisor because dividend was
 					; negative, leaving remainder
 	push	af

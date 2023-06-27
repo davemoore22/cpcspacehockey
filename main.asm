@@ -32,9 +32,24 @@
 ;
 ; ../rasm/rasm_linux64 -eo ./main.asm
 ; ../caprice32/cap32 -a "MEMORY &7fff" -i ./hockey.bin -o 0x8000
+;
 ;###############################################################################
 
-ORG #8000
+; Info
+PRINT
+PRINT "S P A C E - H O C K E Y"
+PRINT "Original (c) David Hay 1988 (AA42)"
+PRINT "Assembly Rewrite (c) Dave Moore 2023"
+PRINT
+
+; Choose output type (Binary File/Disk Image/Tape Image)
+DESTINATION = 1
+
+; Set destination
+BASE_LOAD_ADDRESS = #8000
+PRINT "Base Load Address is", {hex}BASE_LOAD_ADDRESS
+
+ORG	BASE_LOAD_ADDRESS
 BEGIN_CODE
 
 setup:
@@ -55,28 +70,36 @@ restart_game:
 	call 	show_game_over		; Game over screen
 	call 	wait_for_key
 
-	ld a, 	(quit_flag)		; Exit if Q key is pressed
+	ld	a, (quit_flag)		; Exit if Q key is pressed
 	cp 	#FF
 	ret 	z
 
 	jp 	restart_game
 
-ALIGN #100
+ALIGN	#100
 
 ; Include all the other game code/data
-INCLUDE 'game.asm'
-INCLUDE 'consts.asm'
-INCLUDE 'strings.asm'
-INCLUDE 'funcs.asm'
+INCLUDE	'game.asm'
+INCLUDE	'consts.asm'
+INCLUDE	'strings.asm'
+INCLUDE	'funcs.asm'
 
-ALIGN #100
+ALIGN	#100
 
 INCLUDE 'data.asm'
 
 END_CODE
 
-; Save to DSK file
-SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE
-;SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE, DSK, 'hockey.dsk'
-;SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE, TAPE, 'hockey.cdt'
-
+IF DESTINATION == 1
+	PRINT "Saving to Binary File"
+	SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE
+	PRINT
+ELSEIF DESTINATION == 2
+	PRINT "Saving to Disk Image"
+	SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE, DSK, 'hockey.dsk'
+	PRINT
+ELSEIF DESTINATION == 3
+	PRINT "Saving to Tape Image"
+	SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE, TAPE, 'hockey.cdt'
+	PRINT
+ENDIF
