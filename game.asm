@@ -362,7 +362,8 @@ refresh_game
 
 move_ball:
 
-	call	move_ball_e		; Sets E to #FF if ball moved
+	call	move_ball_e		; These all set E to #FF if ball moved
+	call	move_ball_w
 	; #TODO the other directions
 	
 	ret
@@ -437,8 +438,85 @@ move_ball_e_cont:
 move_ball_e_ret:
 	ret
 
-; #TODO - the other 7 possible movements
+;###############################################################################
+; Move the Ball to the West if we can, if it has been nudged by either Player
+; 
 ; IF x%=g%+1 AND y%=h% OR a%=g%+1 AND b%=h% THEN g%=g%-5
+; IF g%<2 THEN g%=2
+;
+; Output:	E = #FF if Ball moved, else E = #00
+;###############################################################################
+
+move_ball_w:
+move_ball_w_p1:
+	ld	e, 0			; Clear exit condition
+
+	; Check if P1_X = BALL_X + 1
+	ld	a, (game_state + BALL_X)
+	ld	b, a
+	ld	a, (game_state + P1_X)
+	sub	b
+	cp	1
+	jr	nz, move_ball_w_p2
+
+	; Check if P1_Y = BALL_Y
+	ld	a, (game_state + P1_Y)
+	ld 	b, a
+	ld	a, (game_state + BALL_Y)
+	cp	b
+	jr	nz, move_ball_w_p2
+
+	ld	e, #FF			; If both, P1 is adjacent
+
+move_ball_w_p2:
+	; Check if P2_X = BALL_X + 1
+	ld	a, (game_state + BALL_X)
+	ld 	b, a
+	ld	a, (game_state + P2_X)
+	sub	b
+	cp	1
+	jr	nz, move_ball_w_cont
+
+	; Check if P2_Y = BALL_Y
+	ld	a, (game_state + P2_Y)
+	ld	b, a
+	ld	a, (game_state + BALL_Y)
+	cp	b
+	jr	nz, move_ball_w_cont
+
+	ld	e, #FF			; If both, P2 is adjacent
+
+move_ball_w_cont:
+	; Return if neither of these conditions are met
+	ld	a, e			
+	cp	#FF
+	ret	nz
+
+	; Otherwise we can move the Ball
+	ld	a, (game_state + BALL_X)
+	cp	5			; Avoid signed subtraction so if BALL_X - 5 < 0 then instead
+					; set it to 3 and don't subtract 5
+	jr	c, move_ball_w_sub_5
+	sub	5
+	jr	move_ball_w_store
+move_ball_w_sub_5:
+	ld	a, 3
+move_ball_w_store:
+	ld	(game_state + BALL_X), a 
+		
+	cp	a, 3			; Don't let the Ball go off the edge of the playing area
+	jr	nc, move_ball_w_ret
+	ld	a, 3			; Clamp value to 2 - one less than playing area - to allow
+					; Players to "dig" out the Ball
+	ld 	(game_state + BALL_X), a
+
+	ld	e, #FF			; Signal that we have moved the Ball
+
+move_ball_w_ret:
+	ret
+
+; #TODO - the other 7 possible movements
+; 
 ; IF x%=g% AND y%=h% OR a%=g%+1 AND b%=h%-1 THEN h%=h%+5
 ; IF x%=g% AND y%=h%+1 OR a%=g% AND b%=h%+1 THEN h%=h%-5
 
