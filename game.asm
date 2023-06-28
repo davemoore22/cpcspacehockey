@@ -364,6 +364,8 @@ move_ball:
 
 	call	move_ball_e		; These all set E to #FF if ball moved
 	call	move_ball_w
+	call	move_ball_n
+	call	move_ball_s
 	; #TODO the other directions
 	
 	ret
@@ -428,7 +430,7 @@ move_ball_e_cont:
 	ld	(game_state + BALL_X), a 
 		
 	cp	a, 38			; Don't let the Ball go off the edge of the playing area
-	jr	c, move_ball_e_ret
+	ret	c
 	ld	a, 38			; Clamp value to 38 - one less than playing area - to allow
 					; Players to "dig" out the Ball
 	ld 	(game_state + BALL_X), a
@@ -505,7 +507,7 @@ move_ball_w_store:
 	ld	(game_state + BALL_X), a 
 		
 	cp	a, 3			; Don't let the Ball go off the edge of the playing area
-	jr	nc, move_ball_w_ret
+	ret	nc
 	ld	a, 3			; Clamp value to 2 - one less than playing area - to allow
 					; Players to "dig" out the Ball
 	ld 	(game_state + BALL_X), a
@@ -515,10 +517,154 @@ move_ball_w_store:
 move_ball_w_ret:
 	ret
 
-; #TODO - the other 7 possible movements
+;###############################################################################
+; Move the Ball to the North if we can, if it has been nudged by either Player
 ; 
-; IF x%=g% AND y%=h% OR a%=g%+1 AND b%=h%-1 THEN h%=h%+5
 ; IF x%=g% AND y%=h%+1 OR a%=g% AND b%=h%+1 THEN h%=h%-5
+; IF h%<2 THEN h%=2
+;
+; Output:	E = #FF if Ball moved, else E = #00
+;###############################################################################
+
+move_ball_n:
+move_ball_n_p1:
+	ld	e, 0			; Clear exit condition
+
+	; Check if P1_Y = BALL_Y + 1
+	ld	a, (game_state + BALL_Y)
+	ld	b, a
+	ld	a, (game_state + P1_Y)
+	sub	b
+	cp	1
+	jr	nz, move_ball_n_p2
+
+	; Check if P1_X = BALL_X
+	ld	a, (game_state + P1_X)
+	ld 	b, a
+	ld	a, (game_state + BALL_X)
+	cp	b
+	jr	nz, move_ball_n_p2
+
+	ld	e, #FF			; If both, P1 is adjacent
+
+move_ball_n_p2:
+	; Check if P2_Y = BALL_Y + 1
+	ld	a, (game_state + BALL_Y)
+	ld 	b, a
+	ld	a, (game_state + P2_Y)
+	sub	b
+	cp	1
+	jr	nz, move_ball_n_cont
+
+	; Check if P2_X = BALL_X
+	ld	a, (game_state + P2_X)
+	ld	b, a
+	ld	a, (game_state + BALL_X)
+	cp	b
+	jr	nz, move_ball_n_cont
+
+	ld	e, #FF			; If both, P2 is adjacent
+
+move_ball_n_cont:
+	; Return if neither of these conditions are met
+	ld	a, e			
+	cp	#FF
+	ret	nz
+
+	; Otherwise we can move the Ball
+	ld	a, (game_state + BALL_Y)
+	cp	5			; Avoid signed subtraction so if BALL_X - 5 < 0 then instead
+					; set it to 3 and don't subtract 5
+	jr	c, move_ball_n_sub_5
+	sub	5
+	jr	move_ball_n_store
+move_ball_n_sub_5:
+	ld	a, 2
+move_ball_n_store:
+	ld	(game_state + BALL_Y), a 
+		
+	cp	a, 2			; Don't let the Ball go off the edge of the playing area
+	ret	nc
+	ld	a, 2			; Clamp value to 2 - one less than playing area - to allow
+					; Players to "dig" out the Ball
+	ld 	(game_state + BALL_Y), a
+
+	ld	e, #FF			; Signal that we have moved the Ball
+
+move_ball_n_ret:
+	ret
+
+;###############################################################################
+; Move the Ball to the South if we can, if it has been nudged by either Player
+; 
+; IF x%=g% AND y%=h%-1 OR a%=g% AND b%=h%-1 THEN h%=h%+5
+; IF h%>21 THEN h%=21
+;
+; Output:	E = #FF if Ball moved, else E = #00
+;###############################################################################
+
+move_ball_s:
+move_ball_s_p1:
+	ld	e, 0			; Clear exit condition
+
+	; Check if P1_Y = BALL_Y - 1
+	ld	a, (game_state + P1_Y)
+	ld	b, a
+	ld	a, (game_state + BALL_Y)
+	sub	b
+	cp	1
+	jr	nz, move_ball_s_p2
+
+	; Check if P1_X = BALL_X
+	ld	a, (game_state + P1_X)
+	ld 	b, a
+	ld	a, (game_state + BALL_X)
+	cp	b
+	jr	nz, move_ball_s_p2
+
+	ld	e, #FF			; If both, P1 is adjacent
+
+move_ball_s_p2:
+	; Check if P2_Y = BALL_Y - 1
+	ld	a, (game_state + P2_Y)
+	ld 	b, a
+	ld	a, (game_state + BALL_Y)
+	sub	b
+	cp	1
+	jr	nz, move_ball_s_cont
+
+	; Check if P2_X = BALL_X
+	ld	a, (game_state + P2_X)
+	ld	b, a
+	ld	a, (game_state + BALL_X)
+	cp	b
+	jr	nz, move_ball_s_cont
+
+	ld	e, #FF			; If both, P2 is adjacent
+
+move_ball_s_cont:
+	; Return if neither of these conditions are met
+	ld	a, e			
+	cp	#FF
+	ret	nz
+
+	; Otherwise we can move the Ball
+	ld	a, (game_state + BALL_Y)	
+	add	a, 5
+	ld	(game_state + BALL_Y), a 
+		
+	cp	a, 21			; Don't let the Ball go off the edge of the playing area
+	ret	c
+	ld	a, 21			; Clamp value to 21 - one less than playing area - to allow
+					; Players to "dig" out the Ball
+	ld 	(game_state + BALL_Y), a
+
+	ld	e, #FF			; Signal that we have moved the Ball
+
+move_ball_s_ret:
+	ret
+
+; #TODO - the other 7 possible movements
 
 ; IF x%=g%-1 AND y%=h%-1 OR a%=g%-1 AND b%=h%-1 THEN g%=g%+5:h%=h%+5
 ; IF x%=g%+1 AND y%=h%-1 OR a%=g%+1 AND b%=h%-1 THEN g%=g%+5:h%=h%+5
@@ -697,7 +843,7 @@ handle_p2_ret:				; Exit point for the movement routines
 
 handle_p1_up:
 	ld	a, (game_state + P1_Y)	; Check for edge of playing area
-	cp	a, 2
+	cp	a, 1
 	jp	z, handle_p1_ret	; If we are at the edge don't do anything
 
 	ld	a, (game_state + P1_X)	; Store the current location
