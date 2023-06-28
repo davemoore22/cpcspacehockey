@@ -35,10 +35,11 @@ main_loop:
 	ret z				; Otherwise continue
 
 	call	refresh_game		
-	call	handle_p1
-	call	handle_p2
-	call	handle_cd
-	call	move_ball
+	call	handle_p1		; Move P1 if movement requested
+	call	handle_p2		; Move P2 if movement requested
+	call	test_for_cd		; Check if P1 or P2 are adjacent to the
+					; Ball after the movement above
+	call	move_ball		; Move the Ball if needed
 	call	check_goal
 
 	ld de,	timer			; Decrement the timer
@@ -356,25 +357,81 @@ refresh_game
 
 	ret
 
+
+
 ;###############################################################################
 ; Move the Ball depending on how it has been touched
 ;###############################################################################
 
 move_ball:
+	ld	hl, cd_state + 4	; Return if cd flags are both not set
+	ld	a, (hl)
+	cp	#FF
+	jr	z, move_ball_c
+	inc	hl
+	ld	a, (hl)
+	cp	#FF
+	jr	z, move_ball_c
+	ret
 
-	call	move_ball_e		; These all set E to #FF if ball moved
+; A Player is adjacent to the ball, so work out how to move the ball
+move_ball_c:
+
+	; These all set E to #FF if ball moved
+	call	move_ball_e		
 	call	move_ball_w
 	call	move_ball_n
 	call	move_ball_s
-	; #TODO the other directions
-	
+
+	ld	a, e
+	cp	#FF
+	ret nz
+
+	; call	check_for_goal
+
+
+	ret
+
+;###############################################################################
+; See if a Goal being scored by checking the Ball coordinates
+; 
+; IF g%<2 AND h%<17 AND h%>5 THEN P1 Scores
+; IF g%>39 AND h%<17 AND h%>5 THEN P2 Scores
+;###############################################################################
+
+; This is only called once the ball has been moved
+check_for_goal:
+
+check_for_goal_x1:
+	ld 	a, (game_state + BALL_X)
+	cp	a, 2
+	jr	nc, check_for_goal_x2
+	ld	a, 2
+	ld 	(game_state + BALL_X), a
+check_for_goal_x2:
+	ld 	a, (game_state + BALL_X)
+	cp	a, 38
+	jr	c, check_for_goal_y1
+	ld	a, 38
+	ld 	(game_state + BALL_X), a
+check_for_goal_y1:
+	ld 	a, (game_state + BALL_Y)
+	cp	a, 2
+	jr	nc, check_for_goal_y2
+	ld	a, 2
+	ld 	(game_state + BALL_Y), a
+check_for_goal_y2:
+	ld 	a, (game_state + BALL_Y)
+	cp	a, 21
+	ret	c
+	ld	a, 21
+	ld 	(game_state + BALL_Y), a
 	ret
 
 ;###############################################################################
 ; Move the Ball to the East if we can, if it has been nudged by either Player
 ; 
 ; IF x%=g%-1 AND y%=h% OR a%=g%-1 AND b%=h% THEN g%=g%+5
-; IF g%>38 THEN g%=38
 ;
 ; Output:	E = #FF if Ball moved, else E = #00
 ;###############################################################################
@@ -425,16 +482,10 @@ move_ball_e_cont:
 	ret	nz
 
 	; Otherwise we can move the Ball
-	ld	a, (game_state + BALL_X)	
-	add	a, 5
-	ld	(game_state + BALL_X), a 
-		
-	cp	a, 38			; Don't let the Ball go off the edge of the playing area
-	ret	c
-	ld	a, 38			; Clamp value to 38 - one less than playing area - to allow
-					; Players to "dig" out the Ball
-	ld 	(game_state + BALL_X), a
-
+	ld	b, 5
+	ld	c, 0
+	call	mve_ball
+	call	chk_clp_ball		; Clamp the Ball if necessary
 	ld	e, #FF			; Signal that we have moved the Ball
 
 move_ball_e_ret:
@@ -444,7 +495,6 @@ move_ball_e_ret:
 ; Move the Ball to the West if we can, if it has been nudged by either Player
 ; 
 ; IF x%=g%+1 AND y%=h% OR a%=g%+1 AND b%=h% THEN g%=g%-5
-; IF g%<2 THEN g%=2
 ;
 ; Output:	E = #FF if Ball moved, else E = #00
 ;###############################################################################
@@ -506,12 +556,7 @@ move_ball_w_sub_5:
 move_ball_w_store:
 	ld	(game_state + BALL_X), a 
 		
-	cp	a, 3			; Don't let the Ball go off the edge of the playing area
-	ret	nc
-	ld	a, 3			; Clamp value to 2 - one less than playing area - to allow
-					; Players to "dig" out the Ball
-	ld 	(game_state + BALL_X), a
-
+	call	chk_clp_ball		; Clamp the Ball if necessary
 	ld	e, #FF			; Signal that we have moved the Ball
 
 move_ball_w_ret:
@@ -521,7 +566,6 @@ move_ball_w_ret:
 ; Move the Ball to the North if we can, if it has been nudged by either Player
 ; 
 ; IF x%=g% AND y%=h%+1 OR a%=g% AND b%=h%+1 THEN h%=h%-5
-; IF h%<2 THEN h%=2
 ;
 ; Output:	E = #FF if Ball moved, else E = #00
 ;###############################################################################
@@ -583,12 +627,7 @@ move_ball_n_sub_5:
 move_ball_n_store:
 	ld	(game_state + BALL_Y), a 
 		
-	cp	a, 2			; Don't let the Ball go off the edge of the playing area
-	ret	nc
-	ld	a, 2			; Clamp value to 2 - one less than playing area - to allow
-					; Players to "dig" out the Ball
-	ld 	(game_state + BALL_Y), a
-
+	call	chk_clp_ball		; Clamp the Ball if necessary
 	ld	e, #FF			; Signal that we have moved the Ball
 
 move_ball_n_ret:
@@ -598,7 +637,6 @@ move_ball_n_ret:
 ; Move the Ball to the South if we can, if it has been nudged by either Player
 ; 
 ; IF x%=g% AND y%=h%-1 OR a%=g% AND b%=h%-1 THEN h%=h%+5
-; IF h%>21 THEN h%=21
 ;
 ; Output:	E = #FF if Ball moved, else E = #00
 ;###############################################################################
@@ -649,43 +687,132 @@ move_ball_s_cont:
 	ret	nz
 
 	; Otherwise we can move the Ball
-	ld	a, (game_state + BALL_Y)	
-	add	a, 5
-	ld	(game_state + BALL_Y), a 
-		
-	cp	a, 21			; Don't let the Ball go off the edge of the playing area
-	ret	c
-	ld	a, 21			; Clamp value to 21 - one less than playing area - to allow
-					; Players to "dig" out the Ball
-	ld 	(game_state + BALL_Y), a
-
+	ld	b, 0
+	ld	c, 5
+	call	mve_ball
+	call	chk_clp_ball		; Clamp the Ball if necessary
 	ld	e, #FF			; Signal that we have moved the Ball
 
 move_ball_s_ret:
 	ret
 
-; #TODO - the other 7 possible movements
 
-; IF x%=g%-1 AND y%=h%-1 OR a%=g%-1 AND b%=h%-1 THEN g%=g%+5:h%=h%+5
+;###############################################################################
+; Check the Ball Position and keep it in bounds, clamping it to the edge of the
+; playing area
+; 
+; IF g%>38 THEN g%=38
+; IF g%<2 THEN g%=2
+; IF h%>21 THEN h%=21
+; IF h%<2 THEN h%=2
+;
+;###############################################################################
+
+; This is only called once the ball has been moved
+chk_clp_ball:
+chk_clp_ball_x1:
+	ld 	a, (game_state + BALL_X)
+	cp	a, 1
+	jr	nc, chk_clp_ball_x2
+	ld	a, 1
+	ld 	(game_state + BALL_X), a
+chk_clp_ball_x2:
+	ld 	a, (game_state + BALL_X)
+	cp	a, 40
+	jr	c, chk_clp_ball_y1
+	ld	a, 40
+	ld 	(game_state + BALL_X), a
+chk_clp_ball_y1:
+	ld 	a, (game_state + BALL_Y)
+	cp	a, 2
+	jr	nc, chk_clp_ball_y2
+	ld	a, 2
+	ld 	(game_state + BALL_Y), a
+chk_clp_ball_y2:
+	ld 	a, (game_state + BALL_Y)
+	cp	a, 21
+	ret	c
+	ld	a, 21
+	ld 	(game_state + BALL_Y), a
+
+	ret
+
+;###############################################################################
+; Move the ball (will not move it so that any x/y is negative though)
+;
+; INPUT:	B = x squares to move (signed) (will be -5, 0, or 5)
+; INPUT:	C = y squares to move (signed) (will be -5, 0, or 5)
+; OUTPUT:	E = #FF if ball moved
+;###############################################################################
+
+mve_ball:
+	ld	e, 0
+mve_ball_x:
+	ld	a, b			; Skip if no movement for this axis
+	cp	0
+	jr	z, mve_ball_y
+
+mve_ball_x_minus_5:
+	cp	a, #FA			; If -5
+	jr	nz, mve_ball_x_plus_5
+	ld	a, (game_state + BALL_X)
+	ld	(game_state + BALL_OLD_X), a
+	sub	a, 5
+	ld	(game_state + BALL_X), a
+	ld	e, #FF
+	jr	mve_ball_y
+mve_ball_x_plus_5:
+	cp	a, 5			; If 5
+	jr	nz, mve_ball_y
+	ld	a, (game_state + BALL_X)
+	ld	(game_state + BALL_OLD_X), a
+	add	a, 5
+	ld	(game_state + BALL_X), a
+	ld	e, #FF
+	jr	mve_ball_y
+
+mve_ball_y:
+	ld	a, c			; Skip if no movement for this axis
+	cp	0
+	ret	z
+
+mve_ball_y_minus_5:
+	cp	a, #FA			; If -5
+	jr	nz, mve_ball_y_plus_5
+	ld	a, (game_state + BALL_Y)
+	ld	(game_state + BALL_OLD_Y), a
+	sub	a, 5
+	ld	(game_state + BALL_Y), a
+	ld	e, #FF
+	ret
+mve_ball_y_plus_5:
+	cp	a, 5			; If 5
+	jr	nz, mve_ball_y
+	ld	a, (game_state + BALL_Y)
+	ld	(game_state + BALL_OLD_Y), a
+	add	a, 5
+	ld	(game_state + BALL_Y), a
+	ld	e, #FF
+	ret
+
 ; IF x%=g%+1 AND y%=h%-1 OR a%=g%+1 AND b%=h%-1 THEN g%=g%+5:h%=h%+5
 ; IF x%=g%+1 AND y%=h%+1 OR a%=g%+1 AND b%=h%+1 THEN g%=g%-5:h%=h%-5
 ; IF x%=g%-1 AND y%=h%+1 OR a%=g%-1 AND b%=h%+1 THEN g%=g%+5:h%=h%-5
 
 ;###############################################################################
-; Do collision detection between the Ball and P1/P2
+; Test for Collision Detection
 ;
-; If P1 or P2 is adjacent to the Ball then move it away in the opposite
-; direction
+; If P1 or P2 is adjacent to the Ball then set the Collision Bytes
 ;###############################################################################
 
-handle_cd:
+test_for_cd:
 	ld	b, 6			; Reset the game data
 	ld	hl, cd_state
 	ld	a, 0
-handle_cd_loop:
+test_for_cd_loop:
 	ld	(hl), 0
 	inc	hl
-	djnz	handle_cd_loop
+	djnz	test_for_cd_loop
 
 	call	get_p1_pos		; Get the distance from each player to
 					; the ball - note that ABS(distance) is
@@ -694,11 +821,11 @@ handle_cd_loop:
 
 	; Check if P1 is adjacent to the ball
 	ld	hl, cd_state		
-	call	check_adj
+	call	test_for_cd_adj
 	ret	z			; Return early if not 0 or 1
 	ret	nc
 	inc hl
-	call	check_adj
+	call	test_for_cd_adj
 	ret	z			; Return early if not 0 or 1
 	ret	nc
 
@@ -707,11 +834,11 @@ handle_cd_loop:
 
 	; Check if P2 is adjacent to the ball
 	ld	hl, cd_state + 2			
-	call	check_adj
+	call	test_for_cd_adj
 	ret	z			; Return early if not 0 or 1
 	ret	nc
 	ld	hl, cd_state + 3
-	call	check_adj
+	call	test_for_cd_adj
 	ret	z			; Return early if not 0 or 1
 	ret	nc
 	
@@ -720,15 +847,7 @@ handle_cd_loop:
 
 	ret
 
-;###############################################################################
-; Quick check for P1/P2 adjacency to the ball (we are looking for 0 or 1)
-;
-; Input:	HL = absolute distance
-; Output:	Z flag set if distance = 2
-; Output:	NC flag set if distace > 2
-;###############################################################################
-
-check_adj:
+test_for_cd_adj:
 	ld	a, (hl)							
 	cp	2
 	ret
