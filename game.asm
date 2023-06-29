@@ -44,7 +44,7 @@ main_loop:
 	call	test_cd_vars		; Can set the Adjacent flags
 
 	cp	#FF			
-	jr	nz, main_loop_cont	
+	jr	nz, main_loop_cont
 
 
 	call	test_for_cd		; Check if P1 or P2 are adjacent to the
@@ -813,8 +813,9 @@ mve_ball_y_plus_5:
 ;###############################################################################
 ; See if we need to move the ball, will check the bytes populated in set_cd_vars
 ; and if both ABS(P1 bytes) = 0 or 1, set the P1 adjacent flag; and similiarly 
-; for P2; if either adjacent flag is set, return A = #FF, else A = 0
+; for P2; if either adjacent flag is set, return A = #FF, else A = #00
 ;
+; Output:	A = #FF or A = 00
 ; Corrupts:	AF, BC, DE, HL
 ;###############################################################################
 test_cd_vars:
@@ -841,29 +842,8 @@ test_cd_vars:
 	call	check_hl_for_both_ff
 	ld	(de), a
 
-	 push	bc
-	ld hl, #1701
-	call	TXT_SET_CURSOR
-	ld a, (col_det_state + 4)
-	call	print_int
-	ld hl, #1702
-	call	TXT_SET_CURSOR
-	ld a, (col_det_state + 5)
-	call	print_int
-	pop	bc
-
-
-
-
-	;ld	hl, col_det_state + 4
-	;call	check_hl_for_ff		; Set A = #FF if either is #FF
-
-	;push	bc	
-	;ld 	hl, #1701
-	;call	TXT_SET_CURSOR
-	;call	print_int
-	;pop	bc
-
+	ld	hl, (col_det_state + 4)	; Set A = #FF if either is #FF
+	call	check_hl_for_ff		
 	ret
 
 test_cd_vars_inner:
