@@ -42,6 +42,7 @@ print_string:
 ; Print a 3-digit decimal number
 ;
 ; Input:	A = 8-bit value to display
+; Corrupts:	AF, BC
 ;
 ; Routine from https://tinyurl.com/mr39uep5
 ;###############################################################################
@@ -212,6 +213,12 @@ find_abs:
 	neg
 	ret
 
+find_abs_a:
+	or a
+	ret p
+	neg
+	ret
+
 ;###############################################################################
 ; Check if two 8-bit numbers are different by a certain amount
 ;
@@ -243,4 +250,35 @@ beep:
 	ld	a, 7
 	call	TXT_OUTPUT
 	ret
+
+check_hl_for_ff:
+	ld	a, h
+	cp	#FF
+	jr	z, check_hl_for_ff_is
+	ld	a, l
+	cp	#FF
+	jr	z, check_hl_for_ff_is
+
+	ld	a, #00
+	ret
+
+check_hl_for_ff_is:
+	ld	a, #FF
+	ret
+
+check_hl_for_both_ff:
+	ld	a, h
+	cp	#FF
+	jr	nz, check_hl_for_both_ff_not
+	ld	a, l
+	cp	#FF
+	jr	nz, check_hl_for_both_ff_not
+
+	ld	a, #FF
+	ret
+
+check_hl_for_both_ff_not:
+	ld	a, #00
+	ret
+
 

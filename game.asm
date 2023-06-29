@@ -34,14 +34,25 @@ main_loop:
 	call	bcd_compare
 	ret z				; Otherwise continue
 
-	call	refresh_game		
+	call	refresh_game		; Redraw any changable game elements
+
 	call	handle_p1		; Move P1 if movement requested
 	call	handle_p2		; Move P2 if movement requested
+
+
+	call	set_cd_vars		; Handle collision detection
+	call	test_cd_vars		; Can set the Adjacent flags
+
+	cp	#FF			
+	jr	nz, main_loop_cont	
+
+
 	call	test_for_cd		; Check if P1 or P2 are adjacent to the
 					; Ball after the movement above
 	call	move_ball		; Move the Ball if needed
 	call	check_goal
 
+main_loop_cont:
 	ld de,	timer			; Decrement the timer
 	ld hl,	time_decrement
 	ld b,	TIME_DIGITS
@@ -800,6 +811,118 @@ mve_ball_y_plus_5:
 ; IF x%=g%-1 AND y%=h%+1 OR a%=g%-1 AND b%=h%+1 THEN g%=g%+5:h%=h%-5
 
 ;###############################################################################
+; See if we need to move the ball, will check the bytes populated in set_cd_vars
+; and if both ABS(P1 bytes) = 0 or 1, set the P1 adjacent flag; and similiarly 
+; for P2; if either adjacent flag is set, return A = #FF, else A = 0
+;
+; Corrupts:	AF, BC, DE, HL
+;###############################################################################
+test_cd_vars:
+
+	ld	de, col_det_state + 4	; Load P1 Adjacent Flag
+	ld	bc, col_det_state + 0	; Load P1_Y_diff
+
+	call	test_cd_vars_inner	; Set A = #FF if ABS(BC) = 0 or 1
+	ld	h, a
+	inc	bc			; Load P1_X_diff
+	call	test_cd_vars_inner	; Set A = #FF if ABS(BC) = 0 or 1
+	ld	l, a
+	call	check_hl_for_both_ff
+	ld	(de), a
+
+	inc	de			; Load P1 Adjacent Flag
+	inc	bc			
+
+	call	test_cd_vars_inner	; Set A = #FF if ABS(BC) = 0 or 1
+	ld	h, a
+	inc	bc			; Load P2_X_diff
+	call	test_cd_vars_inner	; Set A = #FF if ABS(BC) = 0 or 1
+	ld	l, a
+	call	check_hl_for_both_ff
+	ld	(de), a
+
+	 push	bc
+	ld hl, #1701
+	call	TXT_SET_CURSOR
+	ld a, (col_det_state + 4)
+	call	print_int
+	ld hl, #1702
+	call	TXT_SET_CURSOR
+	ld a, (col_det_state + 5)
+	call	print_int
+	pop	bc
+
+
+
+
+	;ld	hl, col_det_state + 4
+	;call	check_hl_for_ff		; Set A = #FF if either is #FF
+
+	;push	bc	
+	;ld 	hl, #1701
+	;call	TXT_SET_CURSOR
+	;call	print_int
+	;pop	bc
+
+	ret
+
+test_cd_vars_inner:
+	ld	a, (bc)			
+	call	find_abs_a		; Get the ABS(byte) into A
+	cp	2			; Is it 0 or 1?
+	ret	z			
+	ret	nc
+	ld	a, #FF			; Set the Flag is its 0 or 1
+
+	ret
+
+;###############################################################################
+; To aid us in collision detection, we store the distance from each Player to
+; the Ball every time a Player moves. This will also clear the Player Adjacent
+; flags at col_det_state + 4 and col_det_state + 5 as well
+;###############################################################################
+set_cd_vars:
+	ld	b, 6			; Reset the game data
+	ld	hl, col_det_state
+	ld	a, 0
+set_cd_vars_loop:
+	ld	(hl), 0
+	inc	hl
+	djnz	set_cd_vars_loop
+
+	; P1
+	ld	hl, col_det_state	; HL points to the 4 storage bytes	
+	ld	a, (game_state + BALL_Y)
+	ld	b, a
+	ld	a, (game_state + P1_Y)
+	sub	b
+	ld	(hl), a
+
+	inc	hl
+	ld	a, (game_state + BALL_X)
+	ld	b, a
+	ld	a, (game_state + P1_X)
+	sub	b
+	ld	(hl), a
+
+	; P2	
+	inc	hl
+	ld	a, (game_state + BALL_Y)
+	ld	b, a
+	ld	a, (game_state + P2_Y)
+	sub	b
+	ld	(hl), a
+
+	inc	hl
+	ld	a, (game_state + BALL_X)
+	ld	b, a
+	ld	a, (game_state + P2_X)
+	sub	b
+	ld	(hl), a
+
+	ret
+
+;###############################################################################
 ; Test for Collision Detection
 ;
 ; If P1 or P2 is adjacent to the Ball then set the Collision Bytes
@@ -827,7 +950,10 @@ test_for_cd_loop:
 	inc hl
 	call	test_for_cd_adj
 	ret	z			; Return early if not 0 or 1
-	ret	nc
+	ret	nc:
+	ld	a, (hl)							
+	cp	2
+	ret
 
 	ld	hl, cd_state + 4	; P1 is adjacent to the ball so flag it
 	ld	(hl), #FF
@@ -848,7 +974,7 @@ test_for_cd_loop:
 	ret
 
 test_for_cd_adj:
-	ld	a, (hl)							
+					
 	cp	2
 	ret
 

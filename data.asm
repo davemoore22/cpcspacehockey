@@ -37,7 +37,10 @@ game_state:				; Space for game state
 	DEFB 	0, 0, 0, 0		; Ball old_x/y, x/y
 
 cd_state:				; Colision Detection variables
-	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_x/y, P1/P2 adjacent flags
+	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_y/x, P1/P2 adjacent flags
+	
+col_det_state:
+	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_y/x, P1/P2 adjacent flags
 
 quit_flag:
 	DEFB 	0			; Set to #FF if we want to quit
