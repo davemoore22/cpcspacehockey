@@ -795,7 +795,8 @@ do_move_n:
 	ld	b, 0			; Move Ball North
 	ld	c, -5
 	call	move_ball
-	call    check_for_goal
+	call 	play_ball_sound
+	call	check_for_goal		; Need to set flag if goal scored and exit out of movement
 	call	chk_clp_ball
 	ld	e, #FF
 	ret
@@ -804,7 +805,8 @@ do_move_s:
 	ld	b, 0			; Move Ball South
 	ld	c, 5
 	call	move_ball
-	call    check_for_goal
+	call 	play_ball_sound
+	call	check_for_goal
 	call	chk_clp_ball
 	ld	e, #FF
 	ret
@@ -813,7 +815,8 @@ do_move_e:
 	ld	b, 5			; Move Ball East
 	ld	c, 0
 	call	move_ball
-	call    check_for_goal
+	call 	play_ball_sound
+	call	check_for_goal
 	call	chk_clp_ball
 	ld	e, #FF
 	ret
@@ -822,7 +825,8 @@ do_move_w:
 	ld	b, -5			; Move Ball West
 	ld	c, 0
 	call	move_ball
-	call    check_for_goal
+	call 	play_ball_sound
+	call	check_for_goal
 	call	chk_clp_ball
 	ld	e, #FF
 	ret
@@ -940,3 +944,19 @@ chk_clp_ball_y2_set:
 check_for_goal:
 
 	ret
+
+;###############################################################################
+;
+; Play the Ball Hit Sound
+;
+; Corrupts:	AF, BC, DE, HL, IX
+;
+; https://tinyurl.com/2uu9h7ea
+;
+;###############################################################################
+
+play_ball_sound:
+	ld hl, sound_ball
+	call SOUND_QUEUE
+	ret
+	

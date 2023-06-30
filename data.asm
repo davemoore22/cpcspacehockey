@@ -26,12 +26,14 @@
 ;*******************************************************************************
 
 matrix_table:				; Space for UDCs
-	DEFB 	0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0, 0, 0
+	DEFB 	0, 0, 0, 0, 0, 0
+	DEFB 	0, 0, 0, 0, 0, 0
+	DEFB 	0, 0, 0, 0, 0, 0
+	DEFB 	0, 0, 0, 0, 0, 0
+	DEFB 	0, 0, 0, 0, 0, 0
+	DEFB 	0, 0, 0, 0, 0, 0
+	DEFB 	0, 0, 0, 0, 0, 0
+	DEFB 	0, 0, 0, 0, 0, 0
 
 game_state:				; Space for game state
 	DEFB 	0, 0, 0, 0, 0, 0	; P1 old_x/y, x/y, character, score
@@ -52,3 +54,7 @@ time_decrement:
 
 time_game_over:
 	DEFB 	0, 0			; Game Over timer value
+
+sound_ball:
+	DEFB	1, 0, 0, 30, 0, 0
+	DEFB  	12, 10, 0
