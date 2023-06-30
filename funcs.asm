@@ -1,4 +1,4 @@
-; ******************************************************************************
+;*******************************************************************************
 ; Copyright (C) 2023 Dave Moore
 ;
 ; This file is part of Space-Hockey.
@@ -21,13 +21,16 @@
 ; libraries), containing parts covered by the terms of said libraries, the
 ; licensors of this program grant you additional permission to convey the 
 ; resulting work.
-; ******************************************************************************
+;*******************************************************************************
 
 
 ;###############################################################################
+;
 ; Print a string
 ;
 ; Input:	HL = address of string to print (terminated by 0)
+; Corrupts:	A
+;
 ;###############################################################################
 
 print_string:
@@ -39,12 +42,14 @@ print_string:
 	jr	print_string
 
 ;###############################################################################
+;
 ; Print a 3-digit decimal number
 ;
 ; Input:	A = 8-bit value to display
 ; Corrupts:	AF, BC
 ;
 ; Routine from https://tinyurl.com/mr39uep5
+;
 ;###############################################################################
 
 print_int:
@@ -74,12 +79,15 @@ print_int_display:
 	ret
 
 ;###############################################################################
+;
 ; Internal BCD Function used to shift registers along a number of bytes so that
 ; commands can start from the MSB
 ;
 ; Input:	B = number of bytes to shift HL and DE along
+; Corrupts:	DE, HL (Obviously)
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
+;
 ;###############################################################################
 
 bcd_get_end:
@@ -97,13 +105,15 @@ bcd_get_end:
 	ret
 
 ;###############################################################################
-; Internal BCD Function used to shift registers along a number of bytes so that
-; commands can start from the MSB
+;
+; Print BCD number
 ;
 ; Input:	DE = location of BCD number array
 ; Input:	B = number of bytes in BCD number array
+; Corrupts:	AF, BC, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
+;
 ;###############################################################################
 bcd_show:
 	call	bcd_get_end		; Need to process from the MSB not LSB
@@ -126,13 +136,17 @@ bcd_show_loop:
 	ret
 
 ;###############################################################################
-; Subtract two BCD numbers
 ;
-; Input:	DE = number to subtract from
-; Input:	HL = number to subtract
+; BCD Subtraction
+;
+; Input:	DE = minuend
+; Input:	HL = subtrahend
 ; Input:	B = number of bytes in BCD number array
+; Output:	DE = minuend - subtrahend
+; Corrupts:	AF, BC, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
+;
 ;###############################################################################
 
 bcd_subtract:							
@@ -150,13 +164,17 @@ bcd_subtract_loop:
 	ret
 
 ;###############################################################################
-; Add two BCD numbers
 ;
-; Input:	DE = numbet to add to
-; Input:	HL = number to add
+; BCD Addition
+;
+; Input:	DE = augend
+; Input:	HL = addend
 ; Input:	B = number of bytes in BCD number array
+; Output:	DE = augend + addend
+; Corrupts:	AF, BC, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
+;
 ;###############################################################################
 
 bcd_add:
@@ -174,14 +192,17 @@ bcd_add_loop:
 	ret
 
 ;###############################################################################
-; Compare two BCD numbers
 ;
-; Input:	DE = first number to compare
-; Input:	HL = second number to compare
+; BCD Comparison
+;
+; Input:	DE = First number to compare
+; Input:	HL = Second number to compare
 ; Input:	B = number of bytes in BCD number array
 ; Output:	Z flag set if two numbers are equal
+; Corrupts:	AF
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
+;
 ;###############################################################################
 
 bcd_compare:
@@ -199,11 +220,14 @@ bcd_compare_loop:
 	ret
 
 ;###############################################################################
-; Get the Absolute Difference (ABS) between two 8-bit numbers
+;
+; Get the Absolute Difference (ABS(A-B)) between two 8-bit numbers
 ;
 ; Input:	A = first number
 ; Input:	B = second number
 ; Output:	A = absolute difference
+; Corrupts:	AF, BC
+;
 ;###############################################################################
 
 find_abs:
@@ -213,43 +237,47 @@ find_abs:
 	neg
 	ret
 
+;###############################################################################
+;
+; Get the Absolute value of a Signed 8-bit Number (ABS)
+;
+; Input:	A = number
+; Output:	A = ABS(A)
+; Corrupts:	AF
+;
+;###############################################################################
+
 find_abs_a:
 	or a
 	ret p
 	neg
 	ret
 
-;###############################################################################
-; Check if two 8-bit numbers are different by a certain amount
-;
-; Input:	IX = first number
-; Input:	IY = second number
-; Input:	D = difference to check for
-; Output:	A = #FF if correct difference, else #00
-;###############################################################################
-
-check_diff:				
-	ld	a, (ix)			
-	ld	b, a	
-	ld	a, (iy)			
-	sub	b
-	cp	d			
-	jr	z, check_diff_equal
-	ld	a, #00
-	ret
-
-check_diff_equal:
 	ld a,	#FF
 	ret
 
 ;###############################################################################
-; Beep!
+;
+; Makes a Beep!
+;
+; Corrupts:	AF
+;
 ;###############################################################################
 
 beep:
 	ld	a, 7
 	call	TXT_OUTPUT
 	ret
+
+;###############################################################################
+;
+; Checks if either MSB or LSB in HL Register Pair is #FF
+;
+; Input:	HL = Bytes to Check
+; Output:	A = #FF if either H or L is #FF, else A = #00
+; Corrupts:	AF
+;
+;###############################################################################
 
 check_hl_for_ff:
 	ld	a, h
@@ -266,6 +294,16 @@ check_hl_for_ff_is:
 	ld	a, #FF
 	ret
 
+;###############################################################################
+;
+; Checks if both MSB or LSB in HL Register Pair is #FF
+;
+; Input:	HL = Bytes to Check
+; Output:	A = #FF if both H or L is #FF, else A = #00
+; Corrupts:	AF
+;
+;###############################################################################
+
 check_hl_for_both_ff:
 	ld	a, h
 	cp	#FF
@@ -280,5 +318,3 @@ check_hl_for_both_ff:
 check_hl_for_both_ff_not:
 	ld	a, #00
 	ret
-
-

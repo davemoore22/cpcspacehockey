@@ -1,4 +1,5 @@
-; ******************************************************************************
+;*******************************************************************************
+;
 ; Copyright (C) 2023 Dave Moore
 ;
 ; This file is part of Space-Hockey.
@@ -21,9 +22,11 @@
 ; libraries), containing parts covered by the terms of said libraries, the
 ; licensors of this program grant you additional permission to convey the
 ; resulting work.
-; ******************************************************************************
+;
+;*******************************************************************************
 
 ;###############################################################################
+;
 ; Space-Hockey
 ; Original (c) David Hay 1988 (AA42)
 ; Z80 Rewrite (c) Dave Moore 2023
@@ -51,6 +54,12 @@ PRINT "Base Load Address is", {hex}BASE_LOAD_ADDRESS
 
 ORG	BASE_LOAD_ADDRESS
 BEGIN_CODE
+
+;###############################################################################
+;
+; Beginning of ASM
+;
+;###############################################################################
 
 setup:
 	call	setup_udc		; Redefine characters
@@ -88,8 +97,15 @@ ALIGN	#100
 
 INCLUDE 'data.asm'
 
+;###############################################################################
+;
+; End of ASM
+;
+;###############################################################################
+
 END_CODE
 
+; Output to Binary File, Disk Image, or Tape Image
 IF DESTINATION == 1
 	PRINT "Saving to Binary File"
 	SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE

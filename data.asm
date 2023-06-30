@@ -1,4 +1,5 @@
-; ******************************************************************************
+;*******************************************************************************
+;
 ; Copyright (C) 2023 Dave Moore
 ;
 ; This file is part of Space-Hockey.
@@ -21,7 +22,8 @@
 ; libraries), containing parts covered by the terms of said libraries, the
 ; licensors of this program grant you additional permission to convey the 
 ; resulting work.
-; ******************************************************************************
+;
+;*******************************************************************************
 
 matrix_table:				; Space for UDCs
 	DEFB 	0, 0, 0, 0, 0, 0, 0, 0
@@ -35,11 +37,8 @@ game_state:				; Space for game state
 	DEFB 	0, 0, 0, 0, 0, 0	; P1 old_x/y, x/y, character, score
 	DEFB 	0, 0, 0, 0, 0, 0	; P2 old_x/y, x/y, character, score
 	DEFB 	0, 0, 0, 0		; Ball old_x/y, x/y
-
-cd_state:				; Colision Detection variables
-	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_y/x, P1/P2 adjacent flags
 	
-col_det_state:
+col_det_state:				; Colision Detection variables
 	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_y/x, P1/P2 adjacent flags
 
 quit_flag:
@@ -49,7 +48,7 @@ timer:					; Space for timer
 	DEFB 	0, 0			; Time left (Packed BCD - 4 Digits)
 
 time_decrement:
-	DEFB 	1, 0			; Timer Decrement
+	DEFB 	1, 0			; Timer decrement
 
 time_game_over:
-	DEFB 	0, 0			; Game Over
+	DEFB 	0, 0			; Game Over timer value

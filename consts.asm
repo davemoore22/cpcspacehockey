@@ -1,4 +1,5 @@
-; ******************************************************************************
+;*******************************************************************************
+;
 ; Copyright (C) 2023 Dave Moore
 ;
 ; This file is part of Space-Hockey.
@@ -21,12 +22,15 @@
 ; libraries), containing parts covered by the terms of said libraries, the
 ; licensors of this program grant you additional permission to convey the 
 ; resulting work.
-; ******************************************************************************
+;
+;*******************************************************************************
 
 ;###############################################################################
+;
 ; Firmware Calls
 ;
 ; http://www.cantrell.org.uk/david/tech/cpc/cpc-firmware/
+;
 ;###############################################################################
 
 KM_GET_JOYSTICK 	EQU 	#BB24	; Check the Joystick (INKEY)
@@ -45,9 +49,11 @@ TXT_SET_PAPER		EQU 	#BB96	; Set the Paper Colour (PAPER)
 TXT_SET_PEN		EQU 	#BB90	; Set the Pen Colour (PEN)
 
 ;###############################################################################
+;
 ; Keyboard Mappings
 ;
 ; https://lronaldo.github.io/cpctelera/files/keyboard/keyboard-h.html
+;
 ;###############################################################################
 
 P1_DOWN 		EQU	73	; Joystick
@@ -61,9 +67,12 @@ P2_LEFT			EQU	34
 P2_RIGHT		EQU	27
 P2_UP			EQU	67
 KEY_QUIT		EQU	34	; Q
+RESET_KEY		EQU	64	; 1
 
 ;###############################################################################
+;
 ; UDCs
+;
 ;###############################################################################
 
 UDC_FIRST		EQU	250	; First UDC
@@ -79,7 +88,9 @@ CHR_GOALS		EQU	'='
 CHR_SPACE		EQU	' '
 
 ;###############################################################################
+;
 ; Game State Offsets
+;
 ;###############################################################################
 
 P1_OLD_Y		EQU	#00	; P1 info
