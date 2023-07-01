@@ -32,7 +32,7 @@
 ;###############################################################################
 
 str_bottom_text:	DEFM 'S P A C E - H O C K E Y', #00
-str_credits_1:		DEFM 'Original (c) David Hay 1988 (AA42)', #00
+str_credits_1:		DEFM 'Original (c) David Hay 1989 (AA42)', #00
 str_credits_2:		DEFM 'Assembly Rewrite (c) Dave Moore 2023', #00
 str_game_over:		DEFM 'G A M E  O V E R', #00
 str_game_score_p1:	DEFM '1:', #00
