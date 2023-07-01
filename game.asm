@@ -1003,34 +1003,36 @@ check_for_goal:
 	
 .lt_2:		
 	ld	a, (game_state + BALL_Y); Check if inside goalposts on right
-	cp	6
-	ret	p
-	cp	18
-	jp	m, .p1_scored
+	cp	5
+	ret	m
+	cp	17
+	jp	m, .p2_scored
 	ret
 
 .gt_39:		
 	ld	a, (game_state + BALL_Y); Check if inside goalposts on P1_LEFT
-	cp	6
-	ret	p
-	cp	18
-	jp	m, .p2_scored
+	cp	5
+	ret	m
+	cp	17
+	jp	m, .p1_scored
 	ret
 
 .p1_scored:
-	ld	a, (game_state + BALL_X)
 	ld	a, (game_state + P1_SCORE)
 	inc	a
 	ld 	(game_state + P1_SCORE), a
+	call	play_goal_sound
 	call	reset_pb
 	ld	a, #FF
 	ret
 
 .p2_scored:
-	ld	a, (game_state + BALL_X)
+	
+
 	ld	a, (game_state + P2_SCORE)
 	inc	a
 	ld 	(game_state + P2_SCORE), a
+	call	play_goal_sound
 	call	reset_pb
 	ld	a, #FF
 	ret
@@ -1046,7 +1048,32 @@ check_for_goal:
 ;###############################################################################
 
 play_ball_sound:
-	ld hl, sound_ball
-	call SOUND_QUEUE
+	ld	hl, sound_ball
+	call	SOUND_QUEUE
 	ret
 	
+;###############################################################################
+;
+; Play the Goal Sound
+;
+; Corrupts:	AF, BC, DE, HL
+;
+; https://tinyurl.com/2uu9h7ea
+;
+;###############################################################################
+
+play_goal_sound: 
+	ld	b, 15			; Reset Noise Level
+.loop:
+	ld 	hl, sound_goal + 5
+	ld	(hl), b
+	push	bc
+	ld	hl, sound_goal
+	call	SOUND_QUEUE
+	pop	bc
+	call	MC_WAIT_FLYBACK
+	djnz	.loop
+	ld	b, 0
+	ld	hl, sound_goal
+	call	SOUND_QUEUE
+	ret
