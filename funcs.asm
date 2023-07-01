@@ -29,7 +29,7 @@
 ; Print a string
 ;
 ; Input:	HL = address of string to print (terminated by 0)
-; Corrupts:	A
+; Corrupts:	AF, HL
 ;
 ;###############################################################################
 
@@ -54,21 +54,21 @@ print_string:
 
 print_int:
 	ld	b, 100			; Divisor to obtain 100's digit value
-	call	print_int_digit		; Display digit
+	call	.digit			; Display digit
 	ld	b, 10			; Divisor to obtain 10's digit value
-	call	print_int_digit		; Display digit
+	call	.digit			; Display digit
 	ld	b, 1			; Divisor to obtain 1's digit value
 
-print_int_digit:
+.digit:
 	ld	c, 0			; Zeroise result
 
-print_int_dec_divide:
+.dec_divide:
 	sub	b			; Subtract divisor
-	jr 	c, print_int_display	; If dividend < divisor, division ended
+	jr 	c, .display		; If dividend < divisor, division ended
 	inc	c			; Increment digit value
-	jr	print_int_dec_divide
+	jr	.dec_divide
 
-print_int_display:
+.display:
 	add	a, b			; Add divisor because dividend was
 					; negative, leaving remainder
 	push	af
@@ -84,7 +84,7 @@ print_int_display:
 ; commands can start from the MSB
 ;
 ; Input:	B = number of bytes to shift HL and DE along
-; Corrupts:	DE, HL (Obviously)
+; Corrupts:	BC, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
@@ -110,7 +110,7 @@ bcd_get_end:
 ;
 ; Input:	DE = location of BCD number array
 ; Input:	B = number of bytes in BCD number array
-; Corrupts:	AF, BC, DE, HL
+; Corrupts:	AF, DE
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
@@ -118,7 +118,7 @@ bcd_get_end:
 bcd_show:
 	call	bcd_get_end		; Need to process from the MSB not LSB
 
-bcd_show_loop:
+.loop:
 	ld	a, (de)
 	and	%11110000		; Use the high nibble
 	rrca
@@ -132,7 +132,7 @@ bcd_show_loop:
 	and	%00001111		; Now the low nibble
 	add	'0'
 	call	TXT_OUTPUT
-	djnz	bcd_show_loop		; Next byte
+	djnz	.loop		; Next byte
 	ret
 
 ;###############################################################################
@@ -143,7 +143,7 @@ bcd_show_loop:
 ; Input:	HL = subtrahend
 ; Input:	B = number of bytes in BCD number array
 ; Output:	DE = minuend - subtrahend
-; Corrupts:	AF, BC, DE, HL
+; Corrupts:	AF, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
@@ -152,7 +152,7 @@ bcd_show_loop:
 bcd_subtract:							
 	or	a			; Clear carry flag
 
-bcd_subtract_loop:
+.loop:
 	ld	a, (de)
 	sbc	(hl)			; Subtract HL from DE with carry
 	daa				; Fix A using DAA
@@ -160,7 +160,7 @@ bcd_subtract_loop:
 
 	inc	de
 	inc	hl
-	djnz	bcd_subtract_loop
+	djnz	.loop
 	ret
 
 ;###############################################################################
@@ -171,7 +171,7 @@ bcd_subtract_loop:
 ; Input:	HL = addend
 ; Input:	B = number of bytes in BCD number array
 ; Output:	DE = augend + addend
-; Corrupts:	AF, BC, DE, HL
+; Corrupts:	AF, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
@@ -180,7 +180,7 @@ bcd_subtract_loop:
 bcd_add:
 	or	a			; Clear carry flag
 
-bcd_add_loop:
+.loop:
 	ld	a, (de)
 	adc	(hl)			; Add HL to DE with carry
 	daa				; Fix A using DAA
@@ -188,7 +188,7 @@ bcd_add_loop:
 
 	inc	de
 	inc	hl
-	djnz	bcd_add_loop
+	djnz	.loop
 	ret
 
 ;###############################################################################
@@ -199,7 +199,7 @@ bcd_add_loop:
 ; Input:	HL = Second number to compare
 ; Input:	B = number of bytes in BCD number array
 ; Output:	Z flag set if two numbers are equal
-; Corrupts:	AF
+; Corrupts:	AF, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
@@ -208,14 +208,14 @@ bcd_add_loop:
 bcd_compare:
 	call	bcd_get_end		; Need to process from the MSB not LSB
 
-bcd_compare_loop:			
+.loop:			
 	ld	a, (de)			; Start from MSB
 	cp	(hl)
 	ret	c			; Smaller
 	ret	nz			; Greater
 	dec	de			; Equal so move onto next byte
 	dec	hl
-	djnz	bcd_compare_loop
+	djnz	.loop
 	or	a 			; Clear the carry flag
 	ret
 
@@ -282,15 +282,15 @@ beep:
 check_hl_for_ff:
 	ld	a, h
 	cp	#FF
-	jr	z, check_hl_for_ff_is
+	jr	z, .is_ff
 	ld	a, l
 	cp	#FF
-	jr	z, check_hl_for_ff_is
+	jr	z, .is_ff
 
 	ld	a, #00
 	ret
 
-check_hl_for_ff_is:
+.is_ff:
 	ld	a, #FF
 	ret
 
@@ -307,14 +307,14 @@ check_hl_for_ff_is:
 check_hl_for_both_ff:
 	ld	a, h
 	cp	#FF
-	jr	nz, check_hl_for_both_ff_not
+	jr	nz, .both_ff_not
 	ld	a, l
 	cp	#FF
-	jr	nz, check_hl_for_both_ff_not
+	jr	nz, .both_ff_not
 
 	ld	a, #FF
 	ret
 
-check_hl_for_both_ff_not:
+.both_ff_not:
 	ld	a, #00
 	ret

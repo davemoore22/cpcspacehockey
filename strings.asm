@@ -36,7 +36,7 @@ str_credits_1:		DEFM 'Original (c) David Hay 1988 (AA42)', #00
 str_credits_2:		DEFM 'Assembly Rewrite (c) Dave Moore 2023', #00
 str_game_over:		DEFM 'G A M E  O V E R', #00
 str_game_score_p1:	DEFM '1:', #00
-str_game_score_p2:	DEFM '2:', #00
+str_game_score_p2:	DEFM ':2', #00
 str_p1_name:		DEFM 'Player 1: 00', #00
 str_p2_name:		DEFM 'Player 2: 00', #00
 str_play_again:		DEFM '<FIRE> OR <SPACE> TO PLAY AGAIN', #00
