@@ -57,4 +57,4 @@ time_game_over:
 
 sound_ball:
 	DEFB	1, 0, 0, 30, 0, 0
-	DEFB  	12, 10, 0
+	DEFB  	7, 10, 0

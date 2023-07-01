@@ -192,6 +192,8 @@ initalise:
 	ld	(hl), 0
 	inc	hl
 	ld	(hl), TIME_MSB
+	ld 	(ix + P1_SCORE), 0
+	ld	(ix + P2_SCORE), 0
 
 ; This is also called after a goal is scored
 reset_pb:
@@ -201,13 +203,11 @@ reset_pb:
 	ld	(ix + P1_OLD_Y), 16
 	ld	(ix + P1_OLD_X), 5
 	ld	(ix + P1_CHAR), CHR_RIGHT
-	ld 	(ix + P1_SCORE), 0
 	ld	(ix + P2_Y), 5		; Initial data for P2
 	ld	(ix + P2_X), 35
 	ld	(ix + P2_OLD_Y), 5
 	ld	(ix + P2_OLD_X), 35
 	ld	(ix + P2_CHAR), CHR_LEFT
-	ld	(ix + P2_SCORE), 0
 	ld	(ix + BALL_OLD_Y), 11	; Initial Ball position
 	ld	(ix + BALL_OLD_X), 20
 	ld 	(ix + BALL_Y), 11
@@ -334,12 +334,22 @@ show_game_over:
 	call	TXT_SET_CURSOR
 	ld	hl, str_p1_name
 	call	print_string
+	ld	hl, #1908
+	call	TXT_SET_CURSOR
+	ld	a, (game_state + P1_SCORE)
+	call	print_int
+
+
 	ld	a, 1
 	call	TXT_SET_PEN
 	ld	hl, #0F0A
 	call	TXT_SET_CURSOR
 	ld	hl, str_p2_name
 	call	print_string
+	ld	hl, #190A
+	call	TXT_SET_CURSOR
+	ld	a, (game_state + P2_SCORE)
+	call	print_int
 
 	; Display play again message
 	ld	a, 1
@@ -815,7 +825,9 @@ do_move:
 	call	move_ball
 	call 	play_ball_sound
 	call	check_for_goal		; Need to set flag if goal scored and exit out of movement
-	call	chk_clp_ball
+	cp 	#FF
+
+	call	check_clip_ball
 	ld	e, #FF
 	ret
 
@@ -825,7 +837,8 @@ do_move:
 	call	move_ball
 	call 	play_ball_sound
 	call	check_for_goal
-	call	chk_clp_ball
+	cp 	#FF
+	call	nz, check_clip_ball
 	ld	e, #FF
 	ret
 
@@ -835,7 +848,8 @@ do_move:
 	call	move_ball
 	call 	play_ball_sound
 	call	check_for_goal
-	call	chk_clp_ball
+	cp 	#FF
+	call	nz, check_clip_ball
 	ld	e, #FF
 	ret
 
@@ -845,7 +859,8 @@ do_move:
 	call	move_ball
 	call 	play_ball_sound
 	call	check_for_goal
-	call	chk_clp_ball
+	cp 	#FF
+	call	nz, check_clip_ball
 	ld	e, #FF
 	ret
 
@@ -924,7 +939,7 @@ move_ball:
 ;
 ;###############################################################################
 
-chk_clp_ball:
+check_clip_ball:
 .x1:
 	ld 	a, (game_state + BALL_X)
 	cp	3
@@ -961,9 +976,63 @@ chk_clp_ball:
 	ld 	(game_state + BALL_Y), a
 	ret
 
-; # TODO
+;###############################################################################
+;
+; Check for a Goal, if so change the score and play a sound effect and then
+; reset the playing field (P1 scores into the Goals on the right, and P2 scores
+; into the Goals on the left).
+;
+; Corrupts:	AF, HL
+; Output:	A = #FF if a goal has been scored, else A = #00
+;
+;###############################################################################
+
 check_for_goal:
 
+	ld	a, #00
+	ld	a, (game_state + BALL_X)
+	cp	2
+	jp	p, .skip		
+	jr	.lt_2			; If Ball is in P1 goal area
+
+.skip:	
+	ld	a, (game_state + BALL_X)
+	cp	39
+	ret	m
+	jr	.gt_39			; If Ball is in P2 goal area
+	
+.lt_2:		
+	ld	a, (game_state + BALL_Y); Check if inside goalposts on right
+	cp	6
+	ret	p
+	cp	18
+	jp	m, .p1_scored
+	ret
+
+.gt_39:		
+	ld	a, (game_state + BALL_Y); Check if inside goalposts on P1_LEFT
+	cp	6
+	ret	p
+	cp	18
+	jp	m, .p2_scored
+	ret
+
+.p1_scored:
+	ld	a, (game_state + BALL_X)
+	ld	a, (game_state + P1_SCORE)
+	inc	a
+	ld 	(game_state + P1_SCORE), a
+	call	reset_pb
+	ld	a, #FF
+	ret
+
+.p2_scored:
+	ld	a, (game_state + BALL_X)
+	ld	a, (game_state + P2_SCORE)
+	inc	a
+	ld 	(game_state + P2_SCORE), a
+	call	reset_pb
+	ld	a, #FF
 	ret
 
 ;###############################################################################

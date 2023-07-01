@@ -85,16 +85,11 @@ restart_game:
 
 	jp 	restart_game
 
-ALIGN	#100
-
 ; Include all the other game code/data
 INCLUDE	'game.asm'
 INCLUDE	'consts.asm'
 INCLUDE	'strings.asm'
 INCLUDE	'funcs.asm'
-
-ALIGN	#100
-
 INCLUDE 'data.asm'
 
 ;###############################################################################
