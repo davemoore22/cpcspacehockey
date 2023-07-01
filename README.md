@@ -4,9 +4,12 @@ A fast-paced 2-player game for the Amstrad CPC. This is a port of the _Space Hoc
 
 Original Type in is in `HOCKEY.BAS` (with a couple of small bug-fixes). I ported it to ASM as a learning experience as I never could get my head around anything other than BASIC back in the 1980s, and Space Hockey was the first ever type-in from Amstrad Action that I typed in.
 
-![new-title-screen](https://github.com/davemoore22/cpcspacehockey/assets/48893555/648ecc86-79f4-40ca-a562-cdf0046c33f5)
+![new-title-screen](https://github.com/davemoore22/cpcspacehockey/assets/48893555/08691642-50e1-4a6e-b230-f6f4e44d7ea4)
 
-![new-in-game](https://github.com/davemoore22/cpcspacehockey/assets/48893555/7f551b94-57e4-4d9f-baf7-749b87a1d0a1)
+![in-game](https://github.com/davemoore22/cpcspacehockey/assets/48893555/3df466ab-07fe-4954-83ae-56b370e229fc)
+
+![gamr-over](https://github.com/davemoore22/cpcspacehockey/assets/48893555/7d077248-ed51-4e5e-b577-72d83acbf3fd)
+
 
 Note that the Controls have changed compared to the original Type-In.
 
