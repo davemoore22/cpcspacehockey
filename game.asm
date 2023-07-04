@@ -181,6 +181,29 @@ setup_udc:
 
 ;###############################################################################
 ;
+; Setup Window Streams
+; 
+; Corrupts:	AF, DE, HL
+;
+;###############################################################################
+
+setup_streams:
+	ld	a, 1			; Switch to Stream #1
+	call	TXT_STR_SELECT	
+	ld	h, 1
+	ld	d, 39
+	ld	l, 2
+	ld	e, 21
+	call	TXT_WIN_ENABLE		; Define a Window over the Playing Area
+					; as Stream #1
+	ld	a, 0
+	call	TXT_SET_PAPER			
+	ld	a, 0			; Swap back to the default Stream (#0)
+	call	TXT_STR_SELECT
+	ret
+
+;###############################################################################
+;
 ; Clear and initialise game state
 ;
 ; Corrupts:	IX, HL
@@ -188,30 +211,33 @@ setup_udc:
 ;###############################################################################
 
 initalise:
+
 	ld	hl, timer		; Store the initial timer value
 	ld	(hl), 0
 	inc	hl
 	ld	(hl), TIME_MSB
+	ld	ix, game_state
 	ld 	(ix + P1_SCORE), 0
 	ld	(ix + P2_SCORE), 0
+	
 
 ; This is also called after a goal is scored
-reset_pb:
+reset_game_state:
 	ld	ix, game_state
 	ld	(ix + P1_Y), 16		; Initial data for P1
 	ld	(ix + P1_X), 5
-	ld	(ix + P1_OLD_Y), 16
-	ld	(ix + P1_OLD_X), 5
 	ld	(ix + P1_CHAR), CHR_RIGHT
 	ld	(ix + P2_Y), 5		; Initial data for P2
 	ld	(ix + P2_X), 35
+	ld	(ix + P2_CHAR), CHR_LEFT
+	ld 	(ix + BALL_Y), 11	; Initial Ball position
+	ld	(ix + BALL_X), 20
+	ld	(ix + P1_OLD_Y), 16
+	ld	(ix + P1_OLD_X), 5
 	ld	(ix + P2_OLD_Y), 5
 	ld	(ix + P2_OLD_X), 35
-	ld	(ix + P2_CHAR), CHR_LEFT
-	ld	(ix + BALL_OLD_Y), 11	; Initial Ball position
+	ld	(ix + BALL_OLD_Y), 11	
 	ld	(ix + BALL_OLD_X), 20
-	ld 	(ix + BALL_Y), 11
-	ld	(ix + BALL_X), 20
 
 	ret
 
@@ -297,7 +323,7 @@ refresh_ui:
 	ld	a, (game_state + P2_SCORE)
 	call	print_int
 
-	; Draw initial time
+	; Draw time
 	ld	hl, #1219
 	call	TXT_SET_CURSOR
 	ld	de, timer
@@ -372,7 +398,10 @@ show_game_over:
 refresh_game
 	call	MC_WAIT_FLYBACK		; Wait for flyback to avoid flicker
 
-	; Draw timer
+	; Clear Playing Area
+	; call	clear_playing_area
+
+	; Draw Timer
 	ld	a, 1
 	call	TXT_SET_PEN
 	ld	hl, #1219
@@ -386,11 +415,15 @@ refresh_game
 	call	TXT_SET_CURSOR
 	ld	a, (game_state + P1_SCORE)
 	call	print_int
-
 	ld	hl, #2019
 	call	TXT_SET_CURSOR
 	ld	a, (game_state + P2_SCORE)
 	call	print_int
+
+	; Erase and redraw Ball
+	ld	a, 3
+	call	TXT_SET_PEN
+	ld	hl, (game_state + BALL_OLD_Y)
 	call	TXT_SET_CURSOR
 	ld	a, CHR_SPACE
 	call	TXT_OUTPUT
@@ -546,7 +579,8 @@ handle_p1:
 	jp	.return
 
 .return_ball:
-	call	reset_pb
+	call	reset_game_state
+	call	refresh_ui
 	jp	.return
 
 ;###############################################################################
@@ -583,7 +617,7 @@ handle_p2:
 
 .up:
 	ld	a, (game_state + P2_Y)	; Check for edge of playing area
-	cp	a, 2
+	cp	a, 1
 	jp	z, .return		; If we are at the edge don't do anything
 
 	ld	a, (game_state + P2_X)	; Store the current location
@@ -659,7 +693,8 @@ handle_p2:
 	jp	.return
 
 .return_ball:
-	call	reset_pb
+	call	reset_game_state
+	call	refresh_ui
 	jp	.return
 
 ;###############################################################################
@@ -816,8 +851,44 @@ do_move:
 	jp 	.move_e
 
 .test_ne:
+	ld	a, d
+	cp	1			; P_Y = BALL_Y + 1
+	jr	nz, .test_nw
+	ld	a, e
+	cp	-1			; P_X = BALL_X - 1
+	jp	nz, .test_nw
+	jp 	.move_ne
+
+.test_nw:
+	ld	a, d
+	cp	1			; P_Y = BALL_Y + 1
+	jr	nz, .test_se
+	ld	a, e
+	cp	1			; P_X = BALL_X + 1
+	jp	nz, .test_se
+	jp 	.move_nw
+
+.test_se:
+	ld	a, d
+	cp	-1			; P_Y = BALL_Y - 1
+	jr	nz, .test_sw
+	ld	a, e
+	cp	-1			; P_X = BALL_X + 1
+	jp	nz, .test_sw
+	jp 	.move_se
+
+.test_sw:
+	ld	a, d
+	cp	-1			; P_Y = BALL_Y - 1
+	jr	nz, .test_ret
+	ld	a, e
+	cp	1			; P_X = BALL_X - 1
+	jp	nz, .test_ret
+	jp 	.move_sw
+
+.test_ret:
 	ld	e, #00
-	ret ;#TODO
+	ret
 
 .move_n:
 	ld	b, 0			; Move Ball North
@@ -856,6 +927,52 @@ do_move:
 .move_w:
 	ld	b, -5			; Move Ball West
 	ld	c, 0
+	call	move_ball
+	call 	play_ball_sound
+	call	check_for_goal
+	cp 	#FF
+	call	nz, check_clip_ball
+	ld	e, #FF
+	ret
+
+.move_ne:
+	ld	b, 5			; Move Ball North-East
+	ld	c, -5
+	call	move_ball
+	call 	play_ball_sound
+	call	check_for_goal		; Need to set flag if goal scored and exit out of movement
+	cp 	#FF
+
+	call	check_clip_ball
+	ld	e, #FF
+	ret
+
+.move_nw:
+	ld	b, -5			; Move Ball North-East
+	ld	c, -5
+	call	move_ball
+	call 	play_ball_sound
+	call	check_for_goal		; Need to set flag if goal scored and exit out of movement
+	cp 	#FF
+
+	call	check_clip_ball
+	ld	e, #FF
+	ret
+
+.move_se:
+	ld	b, 5			; Move Ball South
+	ld	c, 5
+	call	move_ball
+	call 	play_ball_sound
+	call	check_for_goal
+	cp 	#FF
+	call	nz, check_clip_ball
+	ld	e, #FF
+	ret
+
+.move_sw:
+	ld	b, -5			; Move Ball South
+	ld	c, 5
 	call	move_ball
 	call 	play_ball_sound
 	call	check_for_goal
@@ -1022,19 +1139,41 @@ check_for_goal:
 	inc	a
 	ld 	(game_state + P1_SCORE), a
 	call	play_goal_sound
-	call	reset_pb
+	call	reset_game_state
+	call	refresh_ui
+	; call	clear_playing_area
 	ld	a, #FF
 	ret
 
 .p2_scored:
-	
 
 	ld	a, (game_state + P2_SCORE)
 	inc	a
 	ld 	(game_state + P2_SCORE), a
 	call	play_goal_sound
-	call	reset_pb
+	call	reset_game_state
+	call	refresh_ui
+	; call	clear_playing_area
 	ld	a, #FF
+	ret
+
+
+;###############################################################################
+;
+; Clear the Playing Area
+;
+; Corrupts:	AF
+;
+;
+;###############################################################################
+
+clear_playing_area:
+	ld	a, 1			; Switch to Stream #1
+	call	TXT_STR_SELECT
+	call	TXT_CLEAR_WINDOW	; Clear it
+	ld	a, 0
+	call	TXT_STR_SELECT		; Switch back to Default Stream (#0)
+
 	ret
 
 ;###############################################################################
