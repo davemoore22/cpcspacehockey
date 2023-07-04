@@ -48,7 +48,7 @@ PRINT
 ; Choose output type (Binary File/Disk Image/Tape Image)
 DESTINATION = 1
 
-; Set destination
+; Set destination (code is completely relocatable)
 BASE_LOAD_ADDRESS = #8000
 PRINT "Base Load Address is", {hex}BASE_LOAD_ADDRESS
 

@@ -9,7 +9,7 @@
 ; Foundation, either version 2 of the License, or (at your option) any later
 ; version.
 ;
-; Space-Hockey is distributed in the hope that it will be useful, but WITHOUT 
+; Space-Hockey is distributed in the hope that it will be useful, but WITHOUT
 ; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ; FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 ; details.
@@ -20,7 +20,7 @@
 ; If you modify this program, or any covered work, by linking or combining it
 ; with the libraries referred to in README (or a modified version of said
 ; libraries), containing parts covered by the terms of said libraries, the
-; licensors of this program grant you additional permission to convey the 
+; licensors of this program grant you additional permission to convey the
 ; resulting work.
 ;
 ;*******************************************************************************
@@ -39,7 +39,7 @@ game_state:				; Space for game state
 	DEFB 	0, 0, 0, 0, 0, 0	; P1 old_x/y, x/y, character, score
 	DEFB 	0, 0, 0, 0, 0, 0	; P2 old_x/y, x/y, character, score
 	DEFB 	0, 0, 0, 0		; Ball old_x/y, x/y
-	
+
 col_det_state:				; Colision Detection variables
 	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_y/x, P1/P2 adjacent flags
 
@@ -55,10 +55,14 @@ time_decrement:
 time_game_over:
 	DEFB 	0, 0			; Game Over timer value
 
-sound_ball:
+sound_ball:				; Sound effects definitions
 	DEFB	1, 0, 0, 30, 0, 0
-	DEFB  	7, 10, 0
+	DEFB	7, 10, 0
 
 sound_goal:
-	DEFB 	2, 0, 0, 0, 0, 15
+	DEFB 	2, 0, 0, 0, 0, 15	; Byte Offset +5 gets changed
 	DEFB	5, 15, 0
+
+sound_game_over:
+	DEFB	1, 0, 0, 5, 0, 0	; Byte Offset +3 gets changed
+	DEFB	7, 10, 0

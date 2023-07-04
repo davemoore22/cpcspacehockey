@@ -385,6 +385,8 @@ show_game_over:
 	ld	hl, str_play_again
 	call	print_string
 
+	call 	play_end_sound		; Play Game Over Sound
+
 	ret
 
 ;###############################################################################
@@ -821,7 +823,10 @@ do_move:
 	ld	a, e
 	cp	0			; P_X = BALL_X
 	jp	nz, .test_n
-	jp 	.move_s
+
+	ld	b, 0			; Move Ball South
+	ld	c, 5
+	jp	.move
 
 .test_n:
 	ld	a, d			; P_Y = BALL_Y + 1
@@ -830,7 +835,10 @@ do_move:
 	ld	a, e
 	cp	0			; P_X = BALL_X
 	jp	nz, .test_w
-	jp 	.move_n
+
+	ld	b, 0			; Move Ball North
+	ld	c, -5
+	jp	.move
 
 .test_w:
 	ld	a, d			; P_Y = BALL_Y
@@ -839,7 +847,9 @@ do_move:
 	ld	a, e
 	cp	1			; P_X = BALL_X + 1
 	jp	nz, .test_e
-	jp 	.move_w
+	ld	b, -5			; Move Ball West
+	ld	c, 0
+	jp	.move
 
 .test_e:
 	ld	a, d
@@ -848,7 +858,10 @@ do_move:
 	ld	a, e
 	cp	-1			; P_X = BALL_X - 1
 	jp	nz, .test_ne
-	jp 	.move_e
+	
+	ld	b, 5			; Move Ball East
+	ld	c, 0
+	jp	.move
 
 .test_ne:
 	ld	a, d
@@ -857,7 +870,10 @@ do_move:
 	ld	a, e
 	cp	-1			; P_X = BALL_X - 1
 	jp	nz, .test_nw
-	jp 	.move_ne
+
+	ld	b, 5			; Move Ball North-East
+	ld	c, -5
+	jp	.move
 
 .test_nw:
 	ld	a, d
@@ -866,7 +882,10 @@ do_move:
 	ld	a, e
 	cp	1			; P_X = BALL_X + 1
 	jp	nz, .test_se
-	jp 	.move_nw
+	
+	ld	b, -5			; Move Ball North-West
+	ld	c, -5
+	jp	.move
 
 .test_se:
 	ld	a, d
@@ -875,7 +894,10 @@ do_move:
 	ld	a, e
 	cp	-1			; P_X = BALL_X + 1
 	jp	nz, .test_sw
-	jp 	.move_se
+
+	ld	b, 5			; Move Ball South-East
+	ld	c, 5
+	jp	.move
 
 .test_sw:
 	ld	a, d
@@ -884,95 +906,16 @@ do_move:
 	ld	a, e
 	cp	1			; P_X = BALL_X - 1
 	jp	nz, .test_ret
-	jp 	.move_sw
+
+	ld	b, -5			; Move Ball South-West
+	ld	c, 5
+	jp	.move
 
 .test_ret:
 	ld	e, #00
 	ret
 
-.move_n:
-	ld	b, 0			; Move Ball North
-	ld	c, -5
-	call	move_ball
-	call 	play_ball_sound
-	call	check_for_goal		; Need to set flag if goal scored and exit out of movement
-	cp 	#FF
-
-	call	check_clip_ball
-	ld	e, #FF
-	ret
-
-.move_s:
-	ld	b, 0			; Move Ball South
-	ld	c, 5
-	call	move_ball
-	call 	play_ball_sound
-	call	check_for_goal
-	cp 	#FF
-	call	nz, check_clip_ball
-	ld	e, #FF
-	ret
-
-.move_e:
-	ld	b, 5			; Move Ball East
-	ld	c, 0
-	call	move_ball
-	call 	play_ball_sound
-	call	check_for_goal
-	cp 	#FF
-	call	nz, check_clip_ball
-	ld	e, #FF
-	ret
-
-.move_w:
-	ld	b, -5			; Move Ball West
-	ld	c, 0
-	call	move_ball
-	call 	play_ball_sound
-	call	check_for_goal
-	cp 	#FF
-	call	nz, check_clip_ball
-	ld	e, #FF
-	ret
-
-.move_ne:
-	ld	b, 5			; Move Ball North-East
-	ld	c, -5
-	call	move_ball
-	call 	play_ball_sound
-	call	check_for_goal		; Need to set flag if goal scored and exit out of movement
-	cp 	#FF
-
-	call	check_clip_ball
-	ld	e, #FF
-	ret
-
-.move_nw:
-	ld	b, -5			; Move Ball North-East
-	ld	c, -5
-	call	move_ball
-	call 	play_ball_sound
-	call	check_for_goal		; Need to set flag if goal scored and exit out of movement
-	cp 	#FF
-
-	call	check_clip_ball
-	ld	e, #FF
-	ret
-
-.move_se:
-	ld	b, 5			; Move Ball South
-	ld	c, 5
-	call	move_ball
-	call 	play_ball_sound
-	call	check_for_goal
-	cp 	#FF
-	call	nz, check_clip_ball
-	ld	e, #FF
-	ret
-
-.move_sw:
-	ld	b, -5			; Move Ball South
-	ld	c, 5
+.move:
 	call	move_ball
 	call 	play_ball_sound
 	call	check_for_goal
@@ -1167,6 +1110,7 @@ check_for_goal:
 ;
 ;###############################################################################
 
+; This doesn't work for some reason, not sure why so its not called
 clear_playing_area:
 	ld	a, 1			; Switch to Stream #1
 	call	TXT_STR_SELECT
@@ -1202,14 +1146,48 @@ play_ball_sound:
 ;###############################################################################
 
 play_goal_sound: 
-	ld	b, 15			; Reset Noise Level
+	ld	a, 15			; Reset Noise Level
+	ld	b, 10
 .loop:
-	ld 	hl, sound_goal + 5
-	ld	(hl), b
+	ld 	hl, sound_goal + 5	; Byte to Offset
+	ld	(hl), a
+	push	af
 	push	bc
 	ld	hl, sound_goal
 	call	SOUND_QUEUE
 	pop	bc
+	pop	af
+	dec	a
+	call	MC_WAIT_FLYBACK
+	djnz	.loop
+	ld	b, 0
+	ld	hl, sound_goal
+	call	SOUND_QUEUE
+	ret
+
+;###############################################################################
+;
+; Play the Goal Sound
+;
+; Corrupts:	AF, BC, DE, HL
+;
+; https://tinyurl.com/2uu9h7ea
+;
+;#####################################################; Byte to Offset##########################
+
+play_end_sound: 
+	ld	a, 5
+	ld	b, 10			; Reset Noise Level
+.loop:
+	ld 	hl, sound_goal + 3	; Byte to Offset
+	ld	(hl), a
+	push	af
+	push	bc
+	ld	hl, sound_goal
+	call	SOUND_QUEUE
+	pop	bc
+	pop	af
+	inc	a
 	call	MC_WAIT_FLYBACK
 	djnz	.loop
 	ld	b, 0
