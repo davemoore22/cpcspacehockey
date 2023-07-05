@@ -187,12 +187,12 @@ setup_udc:
 ;
 ;###############################################################################
 
-setup_streams:
+setup_windows:
 	ld	a, 1			; Switch to Stream #1
 	call	TXT_STR_SELECT	
 	ld	h, 1
-	ld	d, 39
-	ld	l, 2
+	ld	d, 38
+	ld	l, 0
 	ld	e, 21
 	call	TXT_WIN_ENABLE		; Define a Window over the Playing Area
 					; as Stream #1
@@ -211,6 +211,7 @@ setup_streams:
 ;###############################################################################
 
 initalise:
+	call	setup_windows
 
 	ld	hl, timer		; Store the initial timer value
 	ld	(hl), 0
@@ -219,7 +220,6 @@ initalise:
 	ld	ix, game_state
 	ld 	(ix + P1_SCORE), 0
 	ld	(ix + P2_SCORE), 0
-	
 
 ; This is also called after a goal is scored
 reset_game_state:
@@ -251,7 +251,6 @@ reset_game_state:
 
 refresh_ui:
 	call	MC_WAIT_FLYBACK		; Wait for flyback to avoid flicker
-	call	SCR_CLEAR
 
 	; Set inks
 	ld	a, 0
@@ -399,9 +398,6 @@ show_game_over:
 
 refresh_game
 	call	MC_WAIT_FLYBACK		; Wait for flyback to avoid flicker
-
-	; Clear Playing Area
-	; call	clear_playing_area
 
 	; Draw Timer
 	ld	a, 1
@@ -582,6 +578,7 @@ handle_p1:
 
 .return_ball:
 	call	reset_game_state
+	call	clear_playing_area
 	call	refresh_ui
 	jp	.return
 
@@ -1083,8 +1080,9 @@ check_for_goal:
 	ld 	(game_state + P1_SCORE), a
 	call	play_goal_sound
 	call	reset_game_state
-	call	refresh_ui
-	; call	clear_playing_area
+	call	clear_playing_area
+	;call	refresh_ui
+	; 
 	ld	a, #FF
 	ret
 
@@ -1095,8 +1093,8 @@ check_for_goal:
 	ld 	(game_state + P2_SCORE), a
 	call	play_goal_sound
 	call	reset_game_state
-	call	refresh_ui
-	; call	clear_playing_area
+	;call	refresh_ui
+	call	clear_playing_area
 	ld	a, #FF
 	ret
 
@@ -1110,10 +1108,10 @@ check_for_goal:
 ;
 ;###############################################################################
 
-; This doesn't work for some reason, not sure why so its not called
 clear_playing_area:
 	ld	a, 1			; Switch to Stream #1
 	call	TXT_STR_SELECT
+	ld	a, 1
 	call	TXT_CLEAR_WINDOW	; Clear it
 	ld	a, 0
 	call	TXT_STR_SELECT		; Switch back to Default Stream (#0)

@@ -63,7 +63,6 @@ BEGIN_CODE
 
 setup:
 	call	setup_udc		; Redefine characters
-	call	setup_streams		; Setup Screen Windows	
 start_game:
 	call	show_title		; Title screen
 	call 	wait_for_key
@@ -73,6 +72,7 @@ start_game:
 	ret 	z
 
 restart_game:
+	call	SCR_CLEAR
 	call 	initalise
 	call 	refresh_ui
 	call 	main_loop		; Main game loop

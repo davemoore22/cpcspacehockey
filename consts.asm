@@ -42,7 +42,7 @@ SCR_SET_BORDER		EQU 	#BC38	; Set the Border Colour (BORDER)
 SCR_SET_INK		EQU 	#BC32	; Set an Ink Colour (INK)
 SCR_SET_MODE		EQU 	#BC0E	; Set the Screen Mode (MODE)
 SOUND_QUEUE		EQU	#BCAA	; Add a Sound to the Queue (SOUND)
-TXT_CLEAR_WINDOW	EQU	#BB63	; Clear the current Window
+TXT_CLEAR_WINDOW	EQU	#BB6C	; Clear the current Window
 TXT_OUTPUT		EQU 	#BB5A	; Print a Character (PRINT)
 TXT_SET_CURSOR		EQU 	#BB75	; Set the Cursor Position (LOCATE)
 TXT_SET_M_TABLE 	EQU 	#BBAB	; Start of the UDG Table (SYMBOL AFTER)
