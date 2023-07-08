@@ -25,44 +25,44 @@
 ;
 ;*******************************************************************************
 
-matrix_table:				; Space for UDCs
-	DEFB 	0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0
-	DEFB 	0, 0, 0, 0, 0, 0
+matrix_table:                           ; Space for UDCs
+       DEFB        0, 0, 0, 0, 0, 0
+       DEFB        0, 0, 0, 0, 0, 0
+       DEFB        0, 0, 0, 0, 0, 0
+       DEFB        0, 0, 0, 0, 0, 0
+       DEFB        0, 0, 0, 0, 0, 0
+       DEFB        0, 0, 0, 0, 0, 0
+       DEFB        0, 0, 0, 0, 0, 0
+       DEFB        0, 0, 0, 0, 0, 0
 
-game_state:				; Space for game state
-	DEFB 	0, 0, 0, 0, 0, 0	; P1 old_x/y, x/y, character, score
-	DEFB 	0, 0, 0, 0, 0, 0	; P2 old_x/y, x/y, character, score
-	DEFB 	0, 0, 0, 0		; Ball old_x/y, x/y
+game_state:                             ; Space for game state
+       DEFB        0, 0, 0, 0, 0, 0     ; P1 old_x/y, x/y, character, score
+       DEFB        0, 0, 0, 0, 0, 0     ; P2 old_x/y, x/y, character, score
+       DEFB        0, 0, 0, 0           ; Ball old_x/y, x/y
 
-col_det_state:				; Colision Detection variables
-	DEFB 	0, 0, 0, 0, 0, 0	; P1/P2 offset_y/x, P1/P2 adjacent flags
+col_det_state:                          ; Colision Detection variables
+       DEFB        0, 0, 0, 0, 0, 0     ; P1/P2 offset_y/x, P1/P2 adjacent flags
 
 quit_flag:
-	DEFB 	0			; Set to #FF if we want to quit
+       DEFB        0                    ; Set to #FF if we want to quit
 
-timer:					; Space for timer
-	DEFB 	0, 0			; Time left (Packed BCD - 4 Digits)
+timer:                                  ; Space for timer
+       DEFB        0, 0                 ; Time left (Packed BCD - 4 Digits)
 
 time_decrement:
-	DEFB 	1, 0			; Timer decrement
+       DEFB        1, 0                 ; Timer decrement
 
 time_game_over:
-	DEFB 	0, 0			; Game Over timer value
+       DEFB        0, 0                 ; Game Over timer value
 
-sound_ball:				; Sound effects definitions
-	DEFB	1, 0, 0, 30, 0, 0
-	DEFB	7, 10, 0
+sound_ball:                             ; Sound effects definitions
+       DEFB       1, 0, 0, 30, 0, 0
+       DEFB       7, 10, 0
 
 sound_goal:
-	DEFB 	2, 0, 0, 0, 0, 15	; Byte Offset +5 gets changed
-	DEFB	5, 15, 0
+       DEFB        2, 0, 0, 0, 0, 15    ; Byte Offset +5 gets changed
+       DEFB       5, 15, 0
 
 sound_game_over:
-	DEFB	1, 0, 0, 5, 0, 0	; Byte Offset +3 gets changed
-	DEFB	7, 10, 0
+       DEFB       1, 0, 0, 5, 0, 0      ; Byte Offset +3 gets changed
+       DEFB       7, 10, 0

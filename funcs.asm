@@ -28,293 +28,290 @@
 ;
 ; Print a string
 ;
-; Input:	HL = address of string to print (terminated by 0)
-; Corrupts:	AF, HL
+; Input:        HL = address of string to print (terminated by 0)
+; Corrupts:     AF, HL
 ;
 ;###############################################################################
 
 print_string:
-	ld	a, (hl)
-	cp	0
-	ret	z
-	inc	hl
-	call	TXT_OUTPUT
-	jr	print_string
+        ld      a, (hl)
+        cp      0
+        ret     z
+        inc     hl
+        call    TXT_OUTPUT
+        jr      print_string
 
 ;###############################################################################
 ;
 ; Print a 3-digit decimal number
 ;
-; Input:	A = 8-bit value to display
-; Corrupts:	AF, BC
+; Input:       A = 8-bit value to display
+; Corrupts:    AF, BC
 ;
 ; Routine from https://tinyurl.com/mr39uep5
 ;
 ;###############################################################################
 
 print_int:
-	ld	b, 100			; Divisor to obtain 100's digit value
-	call	.digit			; Display digit
-	ld	b, 10			; Divisor to obtain 10's digit value
-	call	.digit			; Display digit
-	ld	b, 1			; Divisor to obtain 1's digit value
+        ld       b, 100                 ; Divisor to obtain 100's digit value
+        call    .digit                  ; Display digit
+        ld      b, 10                   ; Divisor to obtain 10's digit value
+        call    .digit                  ; Display digit
+        ld       b, 1                   ; Divisor to obtain 1's digit value
 
 .digit:
-	ld	c, 0			; Zeroise result
+        ld      c, 0                    ; Zeroise result
 
 .dec_divide:
-	sub	b			; Subtract divisor
-	jr 	c, .display		; If dividend < divisor, division ended
-	inc	c			; Increment digit value
-	jr	.dec_divide
+        sub     b                       ; Subtract divisor
+        jr      c, .display             ; If dividend < divisor, division ended
+        inc     c                       ; Increment digit value
+        jr      .dec_divide
 
 .display:
-	add	a, b			; Add divisor because dividend was
-					; negative, leaving remainder
-	push	af
-	ld	a, c			; Get digit value
-	add	a, '0'			; Convert value into ASCII character
-	call	TXT_OUTPUT		; Display digit
-	pop	af
-	ret
+        add     a, b                    ; Add divisor because dividend was
+                                        ; negative, leaving remainder
+        push    af
+        ld      a, c                    ; Get digit value
+        add     a, '0'                  ; Convert value into ASCII character
+        call    TXT_OUTPUT              ; Display digit
+        pop     af
+
+        ret
 
 ;###############################################################################
 ;
 ; Internal BCD Function used to shift registers along a number of bytes so that
 ; commands can start from the MSB
 ;
-; Input:	B = number of bytes to shift HL and DE along
-; Corrupts:	BC, DE, HL
+; Input:       B = number of bytes to shift HL and DE along
+; Corrupts:     BC, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
 ;###############################################################################
 
 bcd_get_end:
-	push	bc
-	ld	c, b			; We want to add BC, but we need to
-					; count the number of bytes minus one
-	dec	c
-	ld	b, 0
-	add	hl, bc
-	ex	hl, de			; We've done HL, but we also do DE
+        push    bc
+        ld      c, b                    ; We want to add BC, but we need to
+                                        ; count the number of bytes minus one
+        dec     c
+        ld      b, 0
+        add     hl, bc
+        ex      hl, de                  ; We've done HL, but we also do DE
 
-	add	hl, bc
-	ex	hl, de
-	pop	bc
-	ret
+        add     hl, bc
+        ex      hl, de
+        pop     bc
+        
+        ret
 
 ;###############################################################################
 ;
 ; Print BCD number
 ;
-; Input:	DE = location of BCD number array
-; Input:	B = number of bytes in BCD number array
-; Corrupts:	AF, DE
+; Input:       DE = location of BCD number array
+; Input:       B = number of bytes in BCD number array
+; Corrupts:     AF, DE
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
 ;###############################################################################
 bcd_show:
-	call	bcd_get_end		; Need to process from the MSB not LSB
+        call    bcd_get_end             ; Need to process from the MSB not LSB
 
 .loop:
-	ld	a, (de)
-	and	%11110000		; Use the high nibble
-	rrca
-	rrca
-	rrca
-	rrca
-	add	'0'			; Convert to a letter and print it
-	call	TXT_OUTPUT
-	ld	a, (de)
-	dec	de
-	and	%00001111		; Now the low nibble
-	add	'0'
-	call	TXT_OUTPUT
-	djnz	.loop		; Next byte
-	ret
+        ld      a, (de)
+        and     %11110000               ; Use the high nibble
+        rrca
+        rrca
+        rrca
+        rrca
+        add     '0'                     ; Convert to a letter and print it
+        call    TXT_OUTPUT
+        ld      a, (de)
+        dec     de
+        and     %00001111               ; Now the low nibble
+        add     '0'
+        call    TXT_OUTPUT
+        djnz    .loop                   ; Next byte
+        ret
 
 ;###############################################################################
 ;
 ; BCD Subtraction
 ;
-; Input:	DE = minuend
-; Input:	HL = subtrahend
-; Input:	B = number of bytes in BCD number array
-; Output:	DE = minuend - subtrahend
-; Corrupts:	AF, DE, HL
+; Input:        DE = minuend
+; Input:        HL = subtrahend
+; Input:        B = number of bytes in BCD number array
+; Output:       DE = minuend - subtrahend
+; Corrupts:     AF, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
 ;###############################################################################
 
-bcd_subtract:							
-	or	a			; Clear carry flag
+bcd_subtract:                                                 
+        or      a                       ; Clear carry flag
 
 .loop:
-	ld	a, (de)
-	sbc	(hl)			; Subtract HL from DE with carry
-	daa				; Fix A using DAA
-	ld	(de), a			; Store it
-
-	inc	de
-	inc	hl
-	djnz	.loop
-	ret
+        ld      a, (de)
+        sbc     (hl)                    ; Subtract HL from DE with carry
+        daa                             ; Fix A using DAA
+        ld      (de), a                 ; Store it
+        inc     de
+        inc     hl
+        djnz    .loop
+        ret
 
 ;###############################################################################
 ;
 ; BCD Addition
-;
-; Input:	DE = augend
-; Input:	HL = addend
-; Input:	B = number of bytes in BCD number array
-; Output:	DE = augend + addend
-; Corrupts:	AF, DE, HL
+;       
+; Input:        DE = augend
+; Input:        HL = addend
+; Input:        B = number of bytes in BCD number array
+; Output:       DE = augend + addend
+; Corrupts:     AF, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
 ;###############################################################################
 
 bcd_add:
-	or	a			; Clear carry flag
+        or      a                       ; Clear carry flag
 
 .loop:
-	ld	a, (de)
-	adc	(hl)			; Add HL to DE with carry
-	daa				; Fix A using DAA
-	ld	(de), a			; Store it
-
-	inc	de
-	inc	hl
-	djnz	.loop
-	ret
+        ld      a, (de)
+        adc     (hl)                    ; Add HL to DE with carry
+        daa                             ; Fix A using DAA
+        ld      (de), a                 ; Store it
+        inc     de
+        inc     hl
+        djnz    .loop
+        ret
 
 ;###############################################################################
 ;
 ; BCD Comparison
 ;
-; Input:	DE = First number to compare
-; Input:	HL = Second number to compare
-; Input:	B = number of bytes in BCD number array
-; Output:	Z flag set if two numbers are equal
-; Corrupts:	AF, DE, HL
+; Input:        DE = First number to compare
+; Input:        HL = Second number to compare
+; Input:        B = number of bytes in BCD number array
+; Output:       Z flag set if two numbers are equal
+; Corrupts:     AF, DE, HL
 ;
 ; Routine from https://chibiakumas.com/z80/advanced.php
 ;
 ;###############################################################################
 
 bcd_compare:
-	call	bcd_get_end		; Need to process from the MSB not LSB
+        call    bcd_get_end             ; Need to process from the MSB not LSB
 
-.loop:			
-	ld	a, (de)			; Start from MSB
-	cp	(hl)
-	ret	c			; Smaller
-	ret	nz			; Greater
-	dec	de			; Equal so move onto next byte
-	dec	hl
-	djnz	.loop
-	or	a 			; Clear the carry flag
-	ret
+.loop:                     
+        ld      a, (de)                 ; Start from MSB
+        cp      (hl)
+        ret     c                       ; Smaller
+        ret     nz                      ; Greater
+        dec     de                      ; Equal so move onto next byte
+        dec     hl
+        djnz    .loop
+        or      a                       ; Clear the carry flag
+        ret
 
 ;###############################################################################
 ;
 ; Get the Absolute Difference (ABS(A-B)) between two 8-bit numbers
 ;
-; Input:	A = first number
-; Input:	B = second number
-; Output:	A = absolute difference
-; Corrupts:	AF, BC
+; Input:        A = first number
+; Input:        B = second number
+; Output:       A = absolute difference
+; Corrupts:     AF, BC
 ;
 ;###############################################################################
 
 find_abs:
-	sub	b
-	or	a
-	ret	p
-	neg
-	ret
+        sub     b
+        or      a
+        ret     p
+        neg
+        ret
 
 ;###############################################################################
 ;
 ; Get the Absolute value of a Signed 8-bit Number (ABS)
 ;
-; Input:	A = number
-; Output:	A = ABS(A)
-; Corrupts:	AF
+; Input:        A = number
+; Output:       A = ABS(A)
+; Corrupts:     AF
 ;
 ;###############################################################################
 
 find_abs_a:
-	or a
-	ret p
-	neg
-	ret
-
-	ld a,	#FF
-	ret
+        or      a
+        ret     p
+        neg
+        ret
 
 ;###############################################################################
 ;
 ; Makes a Beep!
 ;
-; Corrupts:	AF
+; Corrupts:     AF
 ;
 ;###############################################################################
 
 beep:
-	ld	a, 7
-	call	TXT_OUTPUT
-	ret
+        ld      a, 7
+        call    TXT_OUTPUT     
+        ret
 
 ;###############################################################################
 ;
 ; Checks if either MSB or LSB in HL Register Pair is #FF
 ;
-; Input:	HL = Bytes to Check
-; Output:	A = #FF if either H or L is #FF, else A = #00
-; Corrupts:	AF
+; Input:        HL = Bytes to Check
+; Output:       A = #FF if either H or L is #FF, else A = #00
+; Corrupts:     AF
 ;
 ;###############################################################################
 
 check_hl_for_ff:
-	ld	a, h
-	cp	#FF
-	jr	z, .is_ff
-	ld	a, l
-	cp	#FF
-	jr	z, .is_ff
+        ld      a, h
+        cp      #FF
+        jr      z, .is_ff
+        ld      a, l
+        cp      #FF
+        jr      z, .is_ff
 
-	ld	a, #00
-	ret
+        ld      a, #00
+        ret
 
 .is_ff:
-	ld	a, #FF
-	ret
+        ld      a, #FF
+        ret
 
 ;###############################################################################
 ;
 ; Checks if both MSB or LSB in HL Register Pair is #FF
 ;
-; Input:	HL = Bytes to Check
-; Output:	A = #FF if both H or L is #FF, else A = #00
-; Corrupts:	AF
+; Input:        HL = Bytes to Check
+; Output:       A = #FF if both H or L is #FF, else A = #00
+; Corrupts:     AF
 ;
 ;###############################################################################
 
 check_hl_for_both_ff:
-	ld	a, h
-	cp	#FF
-	jr	nz, .both_ff_not
-	ld	a, l
-	cp	#FF
-	jr	nz, .both_ff_not
+        ld      a, h
+        cp      #FF
+        jr      nz, .both_ff_not
+        ld      a, l
+        cp      #FF
+        jr      nz, .both_ff_not
 
-	ld	a, #FF
-	ret
+        ld      a, #FF
+        ret
 
 .both_ff_not:
-	ld	a, #00
-	ret
+        ld      a, #00
+        ret

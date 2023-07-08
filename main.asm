@@ -52,7 +52,7 @@ DESTINATION = 1
 BASE_LOAD_ADDRESS = #8000
 PRINT "Base Load Address is", {hex}BASE_LOAD_ADDRESS
 
-ORG	BASE_LOAD_ADDRESS
+ORG     BASE_LOAD_ADDRESS
 BEGIN_CODE
 
 ;###############################################################################
@@ -62,35 +62,35 @@ BEGIN_CODE
 ;###############################################################################
 
 setup:
-	call	setup_udc		; Redefine characters
+        call    setup_udc               ; Redefine characters
 start_game:
-	call	show_title		; Title screen
-	call 	wait_for_key
+        call    show_title              ; Title screen
+        call    wait_for_key
 
-	ld 	a, (quit_flag)		; Exit if Q key is pressed
-	cp 	#FF
-	ret 	z
+        ld      a, (quit_flag)          ; Exit if Q key is pressed
+        cp      #FF
+        ret     z
 
 restart_game:
-	call	SCR_CLEAR
-	call 	initalise
-	call 	refresh_ui
-	call 	main_loop		; Main game loop
+        call    SCR_CLEAR
+        call    initalise
+        call    refresh_ui
+        call    main_loop               ; Main game loop
 
-	call 	show_game_over		; Game over screen
-	call 	wait_for_key
+        call    show_game_over          ; Game over screen
+        call    wait_for_key
 
-	ld	a, (quit_flag)		; Exit if Q key is pressed
-	cp 	#FF
-	ret 	z
+        ld      a, (quit_flag)          ; Exit if Q key is pressed
+        cp      #FF
+        ret     z
 
-	jp 	restart_game
+        jp      restart_game
 
 ; Include all the other game code/data
-INCLUDE	'game.asm'
-INCLUDE	'consts.asm'
-INCLUDE	'strings.asm'
-INCLUDE	'funcs.asm'
+INCLUDE 'game.asm'
+INCLUDE 'consts.asm'
+INCLUDE 'strings.asm'
+INCLUDE 'funcs.asm'
 INCLUDE 'data.asm'
 
 ;###############################################################################
@@ -103,15 +103,15 @@ END_CODE
 
 ; Output to Binary File, Disk Image, or Tape Image
 IF DESTINATION == 1
-	PRINT "Saving to Binary File"
-	SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE
-	PRINT
+        PRINT "Saving to Binary File"
+        SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE
+        PRINT
 ELSEIF DESTINATION == 2
-	PRINT "Saving to Disk Image"
-	SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE, DSK, 'hockey.dsk'
-	PRINT
+        PRINT "Saving to Disk Image"
+        SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE, DSK, 'hockey.dsk'
+        PRINT
 ELSEIF DESTINATION == 3
-	PRINT "Saving to Tape Image"
-	SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE, TAPE, 'hockey.cdt'
-	PRINT
+        PRINT "Saving to Tape Image"
+        SAVE 'hockey.bin', BEGIN_CODE, END_CODE - BEGIN_CODE, TAPE, 'hockey.cdt'
+        PRINT
 ENDIF
