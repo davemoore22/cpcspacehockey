@@ -35,10 +35,10 @@ Please note that the code will need a few adjustments to work with WINAPE's inbu
 
 Change Log:
 
-v1.0.1 (04/07/2024):
+v1.0.1 (04/07/2023):
 
 - Added Diagonal Ball Movement
-- Fixed a bug with Player 2 not being able to mvoe to the very top of the Playing Area
+- Fixed a bug with Player 2 not being able to move to the very top of the Playing Area
 - Added Game Over Sound Effect
 
 v1.0.0 (01/07/2023):
